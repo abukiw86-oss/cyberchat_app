@@ -1,2 +1,0 @@
-# cyberchat_official
-chat
