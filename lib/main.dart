@@ -5,12 +5,13 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 import 'models/rooms_model.dart';
-import 'services/room_services.dart';
+import 'services/get_rooms.dart';
 import 'services/auth.dart';
 import 'screen/chat_screen.dart';
 import 'models/user_model.dart';
 import 'widgets/auth_widget.dart'; 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'widgets/create_room.dart';
 
 
 
@@ -63,8 +64,9 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
   Timer? _refreshTimer;
   final CookieService _cookieService = CookieService();
   
-  // User data
   UserModel? _currentUser;
+  String _roomCode = '';
+  String _roomType = 'public';
 
   @override
   void initState() {
@@ -118,29 +120,19 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
       }
     });
   }
-
-  // Add this method to your _CyberChatHomePageState
 Future<void> _logout() async {
   try {
-    // Show loading indicator
     setState(() {
       _isLoading = true;
     });
-
-    // Call logout API first
     final authService = AuthService();
     await authService.logout();
-    
-    // Clear local cookies
     await _cookieService.clearCookies();
     
-    // Update UI
     setState(() {
       _currentUser = null;
       _isLoading = false;
     });
-
-    // Show success message
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -163,6 +155,83 @@ Future<void> _logout() async {
       );
     }
   }
+}
+void _showCreateRoomDialog() {
+  if (_currentUser == null) {
+    _showAuthDialog();
+    return;
+  }
+
+  showDialog(
+    context: context,
+    builder: (context) => CreateRoomDialog(
+      user: _currentUser!,
+      onRoomCreated: (result) {
+        // Handle successful room creation
+        final roomData = result['room'];
+        final isCreator = result['is_creator'] ?? true;
+        final inviteCode = result['invite_code'];
+        
+        // Create RoomModel from result
+        final newRoom = RoomModel(
+          code: roomData['code'] ?? _roomCode,
+          participants: 1,
+          lastActive: DateTime.now().toIso8601String(),
+          nickname: _currentUser!.name,
+          status: roomData['status'] ?? _roomType,
+          logoPath: roomData['logo_path'] ?? '',
+          userLimits: roomData['user_limits'] ?? 0,
+        );
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '✅ Room "${_roomCode}" created successfully!',
+                  style: const TextStyle(color: Colors.black),
+                ),
+                if (inviteCode != null && inviteCode.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Invite Code: $inviteCode',
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            backgroundColor: const Color(0xFF00ffff),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'JOIN NOW',
+              textColor: Colors.black,
+              onPressed: () {
+                // Navigate to the new room
+                _navigateToRoom(newRoom, _currentUser!);
+              },
+            ),
+          ),
+        );
+
+        // Optionally refresh rooms list
+        _fetchRooms();
+
+        // Auto-join after a short delay
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            _navigateToRoom(newRoom, _currentUser!);
+          }
+        });
+      },
+    ),
+  );
 }
 
   Future<void> _checkExistingSession() async {
@@ -499,15 +568,6 @@ Future<void> _logout() async {
                 fontSize: 14,
               ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              _errorMessage!,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
-              ),
-              textAlign: TextAlign.center,
-            ),
             const SizedBox(height: 20),
             _buildCyberSmallButton(
               label: 'RETRY',
@@ -798,23 +858,14 @@ Future<void> _logout() async {
             ),
           ),
           const SizedBox(width: 10),
-          Expanded(
-            child:
-            _buildCyberSmallButton(
+        Expanded(
+            child: _buildCyberSmallButton(
               label: 'CREATE',
               icon: Icons.add,
               color: const Color(0xFF00ffff),
-              onTap: () {
-                // Navigate to create room
-                if (_currentUser == null) {
-                  _showAuthDialog();
-                } else {
-                  // Navigate to create room page
-                }
-              },
+              onTap: _showCreateRoomDialog,
             ),
           ),
-          
           const SizedBox(width: 10),
           if (_currentUser != null) 
               Expanded(
