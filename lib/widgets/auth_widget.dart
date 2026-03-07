@@ -136,8 +136,8 @@ class _RecoveryAuthDialogState extends State<RecoveryAuthDialog> {
                   if (value == null || value.isEmpty) {
                     return 'Please enter a display name';
                   }
-                  if (value.length > 50) {
-                    return 'Name too long (max 50 characters)';
+                  if (value.length > 10) {
+                    return 'Name too long (max 10 characters)';
                   }
                   return null;
                 },

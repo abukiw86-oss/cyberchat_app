@@ -8,9 +8,8 @@ class AuthService {
   static const String baseUrl = 'https://astufindit.x10.mx/cyberchat';
   final CookieService _cookieService = CookieService();
 
-  // Authenticate (create or login)
   Future<UserModel> authenticate({
-    required String mode, // 'create' or 'login'
+    required String mode, 
     required String recovery,
     required String name,
   }) async {
@@ -47,7 +46,6 @@ class AuthService {
     }
   }
 
-  // Check current session
   Future<UserModel?> checkSession() async {
     try {
       final cookieHeader = await _cookieService.getCookieHeader();
@@ -75,7 +73,6 @@ class AuthService {
     }
   }
 
-  // Logout
   Future<void> logout() async {
     try {
       final cookieHeader = await _cookieService.getCookieHeader();
@@ -93,4 +90,5 @@ class AuthService {
       await _cookieService.clearCookies();
     }
   }
+
 }

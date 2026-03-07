@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import '../models/rooms_model.dart';
 
 class RoomService {
-  static const String baseUrl = 'https://cyberchat.unaux.com';
+  static const String baseUrl = 'https://astufindit.x10.mx/cyberchat';
   
   Future<List<RoomModel>> fetchRooms() async {
     try {
@@ -23,19 +23,17 @@ class RoomService {
           List<dynamic> roomsJson = jsonResponse['rooms'];
           return roomsJson.map((json) => RoomModel.fromJson(json)).toList();
         } else {
-          _getMockRooms();
           throw Exception('API returned success: false');
         }
       } else {
         throw Exception('Failed to load rooms: ${response.statusCode}');
       }
     } catch (e) {
-      print(e.toString().substring(0,130));
+      print(e);
       throw Exception('Error fetching rooms: $e');
     }
   }
 
-  // Optional: Fetch single room by code
   Future<RoomModel?> fetchRoomByCode(String code) async {
     try {
       final rooms = await fetchRooms();
@@ -48,46 +46,14 @@ class RoomService {
     }
   }
 
-  // Optional: Get public rooms only
   Future<List<RoomModel>> fetchPublicRooms() async {
     final rooms = await fetchRooms();
     return rooms.where((room) => room.isPublic).toList();
   }
-
-  // Optional: Get private rooms only
+ 
   Future<List<RoomModel>> fetchPrivateRooms() async {
     final rooms = await fetchRooms();
     return rooms.where((room) => !room.isPublic).toList();
   }
-  List<RoomModel> _getMockRooms() {
-    return [
-      RoomModel(
-        code: 'Welcome',
-        participants: 10,
-        lastActive: DateTime.now().toIso8601String(),
-        nickname: 'Abuki',
-        status: 'public',
-        logoPath: '',
-        userLimits: 100,
-      ),
-      RoomModel(
-        code: 'General',
-        participants: 5,
-        lastActive: DateTime.now().subtract(const Duration(minutes: 5)).toIso8601String(),
-        nickname: 'System',
-        status: 'public',
-        logoPath: '',
-        userLimits: 50,
-      ),
-      RoomModel(
-        code: 'TechTalk',
-        participants: 3,
-        lastActive: DateTime.now().subtract(const Duration(minutes: 15)).toIso8601String(),
-        nickname: 'Admin',
-        status: 'private',
-        logoPath: '',
-        userLimits: 20,
-      ),
-    ];
-  }
+
 }

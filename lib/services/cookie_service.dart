@@ -41,6 +41,7 @@ class CookieService {
       _cookies = {};
     }
   }
+  
   Future<void> _persistCookies() async {
     try {
       final prefs = await SharedPreferences.getInstance();

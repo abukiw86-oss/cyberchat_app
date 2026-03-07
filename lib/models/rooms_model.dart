@@ -1,4 +1,3 @@
-// lib/models/room_model.dart
 class RoomModel {
   final String code;
   final int participants;
@@ -19,27 +18,25 @@ class RoomModel {
   });
 
   factory RoomModel.fromJson(Map<String, dynamic> json) {
+    int toInt(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      if (value is String) {
+        return int.tryParse(value) ?? 0;
+      }
+      if (value is double) return value.toInt();
+      return 0;
+    }
+
     return RoomModel(
       code: json['code'] ?? '',
-      participants: json['participants'] ?? 0,
+      participants: toInt(json['participants']),
       lastActive: json['last_active'] ?? '',
       nickname: json['nickname'] ?? '',
       status: json['status'] ?? 'private',
-      logoPath: json['logo_path'] ?? 'assets/default_logo.jpg',
-      userLimits: json['user_limits'] ?? 0,
+      logoPath: json['logo_path'] ?? '',
+      userLimits: toInt(json['user_limits'] ?? json['participant_limit'] ?? 0), 
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'code': code,
-      'participants': participants,
-      'last_active': lastActive,
-      'nickname': nickname,
-      'status': status,
-      'logo_path': logoPath,
-      'user_limits': userLimits,
-    };
   }
 
   bool get isPublic => status.toLowerCase() == 'public';
