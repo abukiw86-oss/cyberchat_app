@@ -32,8 +32,6 @@ class RoomService {
     } catch (e) {
       print(e.toString().substring(0,130));
       throw Exception('Error fetching rooms: $e');
-      
-      
     }
   }
 
