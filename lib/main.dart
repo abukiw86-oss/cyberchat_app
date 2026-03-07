@@ -1,12 +1,22 @@
 // lib/main.dart
+import 'package:cyberchat/services/cookie_service.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 import 'models/rooms_model.dart';
 import 'services/room_services.dart';
+import 'services/auth.dart';
+import 'screen/chat_screen.dart';
+import 'models/user_model.dart';
+import 'widgets/auth_widget.dart'; 
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
+
+
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  await SharedPreferences.getInstance();
   runApp(const CyberChatApp());
 }
 
@@ -23,7 +33,7 @@ class CyberChatApp extends StatelessWidget {
         colorScheme: const ColorScheme.dark(
           primary: Color(0xFF00ff00),
           secondary: Color(0xFF00ffff),
-          surface: const Color(0xFF1a1a1a),
+          surface: Color(0xFF1a1a1a),
         ),
       ),
       home: const CyberChatHomePage(),
@@ -46,16 +56,20 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
   late Timer _matrixTimer;
   final List<MatrixSymbol> _matrixSymbols = [];
   
-  // Room service and data
   final RoomService _roomService = RoomService();
   List<RoomModel> _rooms = [];
   bool _isLoading = true;
   String? _errorMessage;
   Timer? _refreshTimer;
+  final CookieService _cookieService = CookieService();
+  
+  // User data
+  UserModel? _currentUser;
 
   @override
   void initState() {
     super.initState();
+    _checkExistingSession();
     
     _glitchController = AnimationController(
       vsync: this,
@@ -67,7 +81,6 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
 
-    // Initialize matrix symbols
     for (int i = 0; i < 50; i++) {
       _matrixSymbols.add(
         MatrixSymbol(
@@ -79,34 +92,148 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
         ),
       );
     }
-
-    // Update matrix symbols periodically
     _matrixTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      setState(() {
-        for (var symbol in _matrixSymbols) {
-          if (_random.nextDouble() > 0.7) {
-            symbol.symbol = _getRandomMatrixSymbol();
+      if (mounted) {
+        setState(() {
+          for (var symbol in _matrixSymbols) {
+            if (_random.nextDouble() > 0.7) {
+              symbol.symbol = _getRandomMatrixSymbol();
+            }
+            symbol.position = Offset(
+              symbol.position.dx,
+              symbol.position.dy + _random.nextDouble() * 5,
+            );
+            if (symbol.position.dy > 800) {
+              symbol.position = Offset(symbol.position.dx, 0);
+            }
           }
-          symbol.position = Offset(
-            symbol.position.dx,
-            symbol.position.dy + _random.nextDouble() * 5,
-          );
-          if (symbol.position.dy > 800) {
-            symbol.position = Offset(symbol.position.dx, 0);
-          }
-        }
-      });
+        });
+      }
     });
-
-    // Fetch rooms
     _fetchRooms();
 
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      _fetchRooms();
+      if (mounted) {
+        _fetchRooms();
+      }
     });
   }
 
+  // Add this method to your _CyberChatHomePageState
+Future<void> _logout() async {
+  try {
+    // Show loading indicator
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Call logout API first
+    final authService = AuthService();
+    await authService.logout();
+    
+    // Clear local cookies
+    await _cookieService.clearCookies();
+    
+    // Update UI
+    setState(() {
+      _currentUser = null;
+      _isLoading = false;
+    });
+
+    // Show success message
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Logged out successfully'),
+          backgroundColor: Color(0xFF00ff00),
+        ),
+      );
+    }
+  } catch (e) {
+    setState(() {
+      _isLoading = false;
+    });
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Logout error: $e'),
+          backgroundColor: const Color.fromARGB(255, 255, 47, 0),
+        ),
+      );
+    }
+  }
+}
+
+  Future<void> _checkExistingSession() async {
+    final authService = AuthService();
+    try {
+      final user = await authService.checkSession();
+      if (user != null && mounted) {
+        setState(() {
+          _currentUser = user;
+        });
+      }
+    } catch (e) {
+      print('Session check error: $e');
+    }
+  }
+
+  void _showAuthDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => RecoveryAuthDialog(
+        onSuccess: (user) {
+          setState(() {
+            _currentUser = user;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Welcome ${user.name}!'),
+              backgroundColor: const Color(0xFF00ff00),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _joinRoom(RoomModel room) {
+    if (_currentUser == null) {
+      // Show auth dialog first
+      showDialog(
+        context: context,
+        builder: (context) => RecoveryAuthDialog(
+          onSuccess: (user) {
+            setState(() {
+              _currentUser = user;
+            });
+            // Then join room
+            _navigateToRoom(room, user);
+          },
+        ),
+      );
+    } else {
+      _navigateToRoom(room, _currentUser!);
+    }
+  }
+
+  void _navigateToRoom(RoomModel room, UserModel user) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatRoomPage(room: room, user: user),
+      ),
+    );
+  }
+
+  void _showJoinRoomDialog(RoomModel room) {
+    _joinRoom(room);
+  }
+
   Future<void> _fetchRooms() async {
+    if (!mounted) return;
+    
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -114,15 +241,19 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
 
     try {
       final rooms = await _roomService.fetchRooms();
-      setState(() {
-        _rooms = rooms;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _rooms = rooms;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
       print(_errorMessage);
     }
   }
@@ -327,10 +458,10 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
+            const SizedBox(
               width: 50,
               height: 50,
-              child: const CircularProgressIndicator(
+              child: CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00ff00)),
                 strokeWidth: 2,
               ),
@@ -468,10 +599,7 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {
-            // Navigate to room
-            // Navigator.push(context, MaterialPageRoute(builder: (_) => ChatRoomPage(room: room)));
-          },
+          onTap: () => _showJoinRoomDialog(room),
           borderRadius: BorderRadius.circular(8),
           splashColor: room.isPublic 
               ? const Color(0xFF00ff00).withOpacity(0.2)
@@ -480,7 +608,6 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                // Room Logo/Icon
                 Container(
                   width: 50,
                   height: 50,
@@ -493,14 +620,27 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
                     ),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child:
-                  ClipRRect(
-                          borderRadius: BorderRadius.circular(7),
-                          child: Image.asset(
-                            "assets/default_logo.jpg",
-                            fit: BoxFit.cover,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(7),
+                    child: Image.asset(
+                      "assets/default_logo.jpg",
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(
+                          child: Text(
+                            room.code.substring(0, 1).toUpperCase(),
+                            style: TextStyle(
+                              color: room.isPublic 
+                                  ? const Color(0xFF00ff00)
+                                  : const Color(0xFFFF00ff),
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        )
+                        );
+                      },
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 // Room Details
@@ -539,7 +679,7 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
                           const SizedBox(width: 4),
                           Text(
                             room.participantDisplay,
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 12,
                             ),
@@ -553,7 +693,7 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
                           const SizedBox(width: 4),
                           Text(
                             _formatDate(room.lastActive),
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 12,
                             ),
@@ -637,6 +777,9 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
               color: const Color(0xFF00ff00),
               onTap: () {
                 // Filter public rooms
+                setState(() {
+                  // Add filtering logic here
+                });
               },
             ),
           ),
@@ -648,21 +791,68 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
               color: const Color(0xFFFF00ff),
               onTap: () {
                 // Filter private rooms
+                setState(() {
+                  // Add filtering logic here
+                });
               },
             ),
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: _buildCyberSmallButton(
+            child:
+            _buildCyberSmallButton(
               label: 'CREATE',
               icon: Icons.add,
               color: const Color(0xFF00ffff),
               onTap: () {
                 // Navigate to create room
+                if (_currentUser == null) {
+                  _showAuthDialog();
+                } else {
+                  // Navigate to create room page
+                }
               },
             ),
           ),
-        ],
+          
+          const SizedBox(width: 10),
+          if (_currentUser != null) 
+              Expanded(
+                child: _buildCyberSmallButton(
+                  label: 'LOGOUT',
+                  icon: Icons.logout,
+                  color: const Color.fromARGB(255, 255, 47, 0),
+                  onTap: _logout,
+                ),
+              ),
+          if (_currentUser == null) 
+                  Expanded(
+                    child: _buildCyberSmallButton(
+                      label: 'START',
+                      icon: Icons.login,
+                      color: const Color.fromARGB(255, 44, 31, 225),
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => RecoveryAuthDialog(
+                            onSuccess: (user) {
+                              setState(() {
+                                _currentUser = user;
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Welcome ${user.name}!'),
+                                  backgroundColor: const Color(0xFF00ff00),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+       
+        ]
       ),
     );
   }
@@ -749,22 +939,51 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
               ),
               const SizedBox(width: 8),
               Text(
-                'SYSTEM ONLINE',
+                _currentUser != null 
+                    ? 'USER: ${_currentUser!.name}' 
+                    : 'GUEST MODE',
                 style: TextStyle(
-                  color: const Color(0xFF00ff00),
+                  color: _currentUser != null 
+                      ? const Color(0xFF00ffff)
+                      : const Color(0xFF00ff00),
                   fontSize: 10,
                   letterSpacing: 1,
                 ),
               ),
             ],
           ),
-          Text(
-            'ROOMS: ${_rooms.length}',
-            style: const TextStyle(
-              color: Color(0xFF00ffff),
-              fontSize: 10,
-              letterSpacing: 1,
-            ),
+          Row(
+            children: [
+              Text(
+                'ROOMS: ${_rooms.length}',
+                style: const TextStyle(
+                  color: Color(0xFF00ffff),
+                  fontSize: 10,
+                  letterSpacing: 1,
+                ),
+              ),
+              if (_currentUser == null) ...[
+                const SizedBox(width: 10),
+                GestureDetector(
+                  onTap: _showAuthDialog,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFF00ff00)),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: const Text(
+                      'LOGIN',
+                      style: TextStyle(
+                        color: Color(0xFF00ff00),
+                        fontSize: 8,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ],
       ),
@@ -797,7 +1016,9 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
           );
         },
         onEnd: () {
-          setState(() {});
+          if (mounted) {
+            setState(() {});
+          }
         },
       ),
     );
@@ -818,13 +1039,13 @@ class MatrixRainPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final textStyle = TextStyle(
-      color: const Color(0xFF00ff00),
+    const textStyle = TextStyle(
+      color: Color(0xFF00ff00),
       fontSize: 16,
       fontFamily: 'monospace',
     );
 
-    final textSpan = TextSpan(text: '0', style: textStyle);
+    const textSpan = TextSpan(text: '0', style: textStyle);
     final textPainter = TextPainter(
       text: textSpan,
       textDirection: TextDirection.ltr,
