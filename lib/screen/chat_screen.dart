@@ -14,10 +14,10 @@ class ChatRoomPage extends StatefulWidget {
   final UserModel user;
 
   const ChatRoomPage({
-    Key? key,
+    super.key,
     required this.room,
     required this.user,
-  }) : super(key: key);
+  });
 
   @override
   State<ChatRoomPage> createState() => _ChatRoomPageState();
@@ -29,7 +29,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   
-  List<MessageModel> _messages = [];
+  final List<MessageModel> _messages = [];
   List<Map<String, dynamic>> _participants = [];
   List<Map<String, dynamic>> _bannedUsers = [];
   bool _isLoading = true;
@@ -189,7 +189,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           'Participants (${_participants.length})',
           style: const TextStyle(color: Color(0xFF00ff00)),
         ),
-        content: Container(
+        content: SizedBox(
           width: double.maxFinite,
           child: ListView.builder(
             shrinkWrap: true,
@@ -405,7 +405,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (message.filePaths.isNotEmpty)
-                        ...message.filePaths.map((url) => _buildFileWidget(url, isSelf)).toList(),
+                        ...message.filePaths.map((url) => _buildFileWidget(url, isSelf)),
                       if (message.message.isNotEmpty)
                         Padding(
                           padding: EdgeInsets.only(top: message.filePaths.isNotEmpty ? 8 : 0),

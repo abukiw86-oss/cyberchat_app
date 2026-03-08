@@ -6,7 +6,7 @@ import '../models/user_model.dart';
 class RecoveryAuthDialog extends StatefulWidget {
   final Function(UserModel) onSuccess;
 
-  const RecoveryAuthDialog({Key? key, required this.onSuccess}) : super(key: key);
+  const RecoveryAuthDialog({super.key, required this.onSuccess});
 
   @override
   State<RecoveryAuthDialog> createState() => _RecoveryAuthDialogState();

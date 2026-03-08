@@ -8,10 +8,10 @@ class CreateRoomDialog extends StatefulWidget {
   final Function(Map<String, dynamic>) onRoomCreated;
 
   const CreateRoomDialog({
-    Key? key,
+    super.key,
     required this.user,
     required this.onRoomCreated,
-  }) : super(key: key);
+  });
 
   @override
   State<CreateRoomDialog> createState() => _CreateRoomDialogState();

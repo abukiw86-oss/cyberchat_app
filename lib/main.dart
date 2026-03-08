@@ -65,8 +65,8 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
   final CookieService _cookieService = CookieService();
   
   UserModel? _currentUser;
-  String _roomCode = '';
-  String _roomType = 'public';
+  final String _roomCode = '';
+  final String _roomType = 'public';
 
   @override
   void initState() {
@@ -191,7 +191,7 @@ void _showCreateRoomDialog() {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '✅ Room "${_roomCode}" created successfully!',
+                  '✅ Room "$_roomCode" created successfully!',
                   style: const TextStyle(color: Colors.black),
                 ),
                 if (inviteCode != null && inviteCode.isNotEmpty) ...[
@@ -323,7 +323,7 @@ void _showCreateRoomDialog() {
           _isLoading = false;
         });
       }
-      print('hh ${_errorMessage}');
+      print('hh $_errorMessage');
     }
   }
 
