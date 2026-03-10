@@ -6,8 +6,9 @@ import 'package:image_picker/image_picker.dart';
 import '../models/rooms_model.dart';
 import '../models/user_model.dart';
 import '../models/message_model.dart';
-import '../services/room_service.dart';
+import '../services/chat_service.dart';
 import '../services/cookie_service.dart';
+import '../services/get_rooms.dart';
 
 class ChatRoomPage extends StatefulWidget {
   final RoomModel room;
@@ -24,8 +25,8 @@ class ChatRoomPage extends StatefulWidget {
 }
 
 class _ChatRoomPageState extends State<ChatRoomPage> {
+  final RoomService _roomservice = RoomService();
   final RoomApiService _apiService = RoomApiService();
-  final CookieService _cookieService = CookieService();
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   
@@ -49,7 +50,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   Future<void> _initializeRoom() async {
     try {
       // Join or create room
-      final result = await _apiService.joinRoom(
+      final result = await _roomservice.joinRoom(
         roomCode: widget.room.code,
         nickname: widget.user.name,
         roomType: widget.room.status,

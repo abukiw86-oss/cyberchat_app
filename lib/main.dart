@@ -12,6 +12,7 @@ import 'models/user_model.dart';
 import 'widgets/auth_widget.dart'; 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'widgets/create_room.dart';
+import 'widgets/input_room_password.dart';
 
 
 
@@ -167,12 +168,10 @@ void _showCreateRoomDialog() {
     builder: (context) => CreateRoomDialog(
       user: _currentUser!,
       onRoomCreated: (result) {
-        // Handle successful room creation
         final roomData = result['room'];
         final isCreator = result['is_creator'] ?? true;
         final inviteCode = result['invite_code'];
         
-        // Create RoomModel from result
         final newRoom = RoomModel(
           code: roomData['code'] ?? _roomCode,
           participants: 1,
@@ -182,8 +181,6 @@ void _showCreateRoomDialog() {
           logoPath: roomData['logo_path'] ?? '',
           userLimits: roomData['user_limits'] ?? 0,
         );
-
-        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Column(
@@ -191,7 +188,7 @@ void _showCreateRoomDialog() {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '✅ Room "$_roomCode" created successfully!',
+                  'Room "$_roomCode" created successfully!',
                   style: const TextStyle(color: Colors.black),
                 ),
                 if (inviteCode != null && inviteCode.isNotEmpty) ...[
@@ -208,22 +205,10 @@ void _showCreateRoomDialog() {
               ],
             ),
             backgroundColor: const Color(0xFF00ffff),
-            duration: const Duration(seconds: 4),
-            action: SnackBarAction(
-              label: 'JOIN NOW',
-              textColor: Colors.black,
-              onPressed: () {
-                // Navigate to the new room
-                _navigateToRoom(newRoom, _currentUser!);
-              },
-            ),
+            duration: const Duration(seconds: 2),
           ),
         );
-
-        // Optionally refresh rooms list
         _fetchRooms();
-
-        // Auto-join after a short delay
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {
             _navigateToRoom(newRoom, _currentUser!);
@@ -234,7 +219,7 @@ void _showCreateRoomDialog() {
   );
 }
 
-  Future<void> _checkExistingSession() async {
+Future<void> _checkExistingSession() async {
     final authService = AuthService();
     try {
       final user = await authService.checkSession();
@@ -248,7 +233,7 @@ void _showCreateRoomDialog() {
     }
   }
 
-  void _showAuthDialog() {
+void _showAuthDialog() {
     showDialog(
       context: context,
       builder: (context) => RecoveryAuthDialog(
@@ -267,27 +252,81 @@ void _showCreateRoomDialog() {
     );
   }
 
-  void _joinRoom(RoomModel room) {
-    if (_currentUser == null) {
-      // Show auth dialog first
-      showDialog(
-        context: context,
-        builder: (context) => RecoveryAuthDialog(
-          onSuccess: (user) {
-            setState(() {
-              _currentUser = user;
-            });
-            // Then join room
-            _navigateToRoom(room, user);
-          },
-        ),
-      );
-    } else {
-      _navigateToRoom(room, _currentUser!);
-    }
+
+Future<void> _joinRoom(RoomModel room) async {
+  if (_currentUser == null) {
+    _showAuthDialog();
+    return;
   }
 
-  void _navigateToRoom(RoomModel room, UserModel user) {
+  setState(() => _isLoading = true);
+
+  try {
+    final result = await _roomService.joinRoom(
+      roomCode: room.code,
+      nickname: _currentUser!.name,
+    );
+
+    print('Join room response: $result'); 
+
+    if (result['success'] == true) {
+      _navigateToRoom(room, _currentUser!);
+
+    } else if (result['success'] == false && result['requires_password'] == true) {
+      _showPasswordDialog(room);
+
+    } else {
+      print(result['message'] ?? 'Failed to join room');
+    }
+  } catch (e) {
+    print('Error: $e');
+  } finally {
+    setState(() => _isLoading = false);
+  }
+}
+
+void _showPasswordDialog(RoomModel room) {
+  
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => RoomPasswordDialog(
+      room: room,
+      user: _currentUser!,
+      onSuccess: (result) {
+        final roomData = result['room'];
+        final isCreator = result['is_creator'] ?? false;
+        
+        final joinedRoom = RoomModel(
+          code: roomData['code'] ?? room.code,
+          participants: roomData['participants'] ?? room.participants + 1,
+          lastActive: DateTime.now().toIso8601String(),
+          nickname: _currentUser!.name,
+          status: roomData['status'] ?? room.status,
+          logoPath: roomData['logo_path'] ?? room.logoPath,
+          userLimits: roomData['user_limits'] ?? room.userLimits,
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ Successfully joined ${room.code}!'),
+            backgroundColor: const Color(0xFFFF00ff),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        _fetchRooms();
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            _navigateToRoom(joinedRoom, _currentUser!);
+          }
+        });
+      },
+    ),
+  );
+}
+
+
+void _navigateToRoom(RoomModel room, UserModel user) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -296,11 +335,11 @@ void _showCreateRoomDialog() {
     );
   }
 
-  void _showJoinRoomDialog(RoomModel room) {
+void _showJoinRoomDialog(RoomModel room) {
     _joinRoom(room);
   }
 
-  Future<void> _fetchRooms() async {
+Future<void> _fetchRooms() async {
     if (!mounted) return;
     
     setState(() {
@@ -350,8 +389,6 @@ void _showCreateRoomDialog() {
             painter: MatrixRainPainter(symbols: _matrixSymbols),
             size: Size.infinite,
           ),
-
-          // Gradient overlay for better readability
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -366,28 +403,19 @@ void _showCreateRoomDialog() {
             ),
           ),
 
-          // Main content
           SafeArea(
             child: Column(
               children: [
-                // Header Section
                 _buildHeader(),
 
-                // Rooms Section
                 Expanded(
                   child: _buildRoomsSection(),
                 ),
-
-                // Action Buttons
                 _buildActionButtons(),
-
-                // Status Bar
                 _buildStatusBar(),
               ],
             ),
           ),
-
-          // Scanning line effect
           _buildScanningLine(),
         ],
       ),
@@ -400,8 +428,6 @@ void _showCreateRoomDialog() {
       child: Column(
         children: [
           const SizedBox(height: 20),
-
-          // Animated glitch logo
           AnimatedBuilder(
             animation: _glitchController,
             builder: (context, child) {
@@ -412,7 +438,6 @@ void _showCreateRoomDialog() {
                 ),
                 child: Stack(
                   children: [
-                    // Glitch layers
                     Text(
                       'CYBERCHAT',
                       style: TextStyle(
@@ -453,8 +478,6 @@ void _showCreateRoomDialog() {
           ),
 
           const SizedBox(height: 8),
-
-          // Subtitle with pulse effect
           AnimatedBuilder(
             animation: _pulseController,
             builder: (context, child) {
@@ -464,15 +487,13 @@ void _showCreateRoomDialog() {
                   fontSize: 14,
                   letterSpacing: 4,
                   color: const Color(0xFF00ff00).withOpacity(0.5 + _pulseController.value * 0.3),
-                  fontWeight: FontWeight.w300,
+                  fontWeight: FontWeight.w500,
                 ),
               );
             },
           ),
 
           const SizedBox(height: 20),
-
-          // Cyberpunk decorative elements
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -548,7 +569,6 @@ void _showCreateRoomDialog() {
         ),
       );
     }
-
     if (_errorMessage != null) {
       return Center(
         child: Column(
@@ -651,7 +671,7 @@ void _showCreateRoomDialog() {
         border: Border.all(
           color: room.isPublic 
               ? const Color(0xFF00ff00).withOpacity(0.3)
-              : const Color(0xFFFF00ff).withOpacity(0.3),
+              : const Color.fromARGB(255, 196, 0, 0).withOpacity(0.3),
         ),
         borderRadius: BorderRadius.circular(8),
         color: Colors.black.withOpacity(0.5),
@@ -663,7 +683,7 @@ void _showCreateRoomDialog() {
           borderRadius: BorderRadius.circular(8),
           splashColor: room.isPublic 
               ? const Color(0xFF00ff00).withOpacity(0.2)
-              : const Color(0xFFFF00ff).withOpacity(0.2),
+              : const Color.fromARGB(255, 194, 0, 0).withOpacity(0.2),
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
@@ -675,15 +695,15 @@ void _showCreateRoomDialog() {
                     border: Border.all(
                       color: room.isPublic 
                           ? const Color(0xFF00ff00)
-                          : const Color(0xFFFF00ff),
+                          : const Color.fromARGB(255, 255, 0, 0),
                       width: 1,
                     ),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(7),
-                    child: Image.asset(
-                      "assets/default_logo.jpg",
+                    child: Image.network(
+                      "https://astufindit.x10.mx/cyberchat/${room.logoPath}",
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Center(
@@ -692,7 +712,7 @@ void _showCreateRoomDialog() {
                             style: TextStyle(
                               color: room.isPublic 
                                   ? const Color(0xFF00ff00)
-                                  : const Color(0xFFFF00ff),
+                                  : const Color.fromARGB(255, 213, 3, 3),
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                             ),
@@ -703,7 +723,6 @@ void _showCreateRoomDialog() {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Room Details
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -766,35 +785,12 @@ void _showCreateRoomDialog() {
                         style: TextStyle(
                           color: room.isPublic 
                               ? const Color(0xFF00ff00).withOpacity(0.7)
-                              : const Color(0xFFFF00ff).withOpacity(0.7),
+                              : const Color.fromARGB(255, 255, 0, 0).withOpacity(0.7),
                           fontSize: 11,
                           letterSpacing: 1,
                         ),
                       ),
                     ],
-                  ),
-                ),
-                // Enter button
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: room.isPublic 
-                          ? const Color(0xFF00ff00)
-                          : const Color(0xFFFF00ff),
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    'ENTER',
-                    style: TextStyle(
-                      color: room.isPublic 
-                          ? const Color(0xFF00ff00)
-                          : const Color(0xFFFF00ff),
-                      fontSize: 10,
-                      letterSpacing: 1,
-                    ),
                   ),
                 ),
               ],
@@ -830,34 +826,6 @@ void _showCreateRoomDialog() {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Row(
         children: [
-          Expanded(
-            child: _buildCyberSmallButton(
-              label: 'PUBLIC',
-              icon: Icons.public,
-              color: const Color(0xFF00ff00),
-              onTap: () {
-                // Filter public rooms
-                setState(() {
-                  // Add filtering logic here
-                });
-              },
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _buildCyberSmallButton(
-              label: 'PRIVATE',
-              icon: Icons.lock_outline,
-              color: const Color(0xFFFF00ff),
-              onTap: () {
-                // Filter private rooms
-                setState(() {
-                  // Add filtering logic here
-                });
-              },
-            ),
-          ),
-          const SizedBox(width: 10),
         Expanded(
             child: _buildCyberSmallButton(
               label: 'CREATE',
@@ -866,6 +834,8 @@ void _showCreateRoomDialog() {
               onTap: _showCreateRoomDialog,
             ),
           ),
+          const SizedBox(width: 10),
+          ElevatedButton(onPressed: _fetchRooms, child: Icon(Icons.refresh)),
           const SizedBox(width: 10),
           if (_currentUser != null) 
               Expanded(
