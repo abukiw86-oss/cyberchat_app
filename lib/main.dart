@@ -121,6 +121,7 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
       }
     });
   }
+
 Future<void> _logout() async {
   try {
     setState(() {
@@ -141,6 +142,7 @@ Future<void> _logout() async {
           backgroundColor: Color(0xFF00ff00),
         ),
       );
+      _fetchRooms();
     }
   } catch (e) {
     setState(() {
@@ -150,13 +152,14 @@ Future<void> _logout() async {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Logout error: $e'),
+          content: Text('Logout error!'),
           backgroundColor: const Color.fromARGB(255, 255, 47, 0),
         ),
       );
     }
   }
 }
+
 void _showCreateRoomDialog() {
   if (_currentUser == null) {
     _showAuthDialog();
@@ -246,7 +249,9 @@ void _showAuthDialog() {
               content: Text('Welcome ${user.name}!'),
               backgroundColor: const Color(0xFF00ff00),
             ),
+            
           );
+          _fetchRooms();
         },
       ),
     );
@@ -272,9 +277,6 @@ Future<void> _joinRoom(RoomModel room) async {
     if (result['success'] == true) {
       _navigateToRoom(room, _currentUser!);
 
-    } else if (result['success'] == false && result['requires_password'] == true) {
-      _showPasswordDialog(room);
-
     } else {
       print(result['message'] ?? 'Failed to join room');
     }
@@ -284,47 +286,6 @@ Future<void> _joinRoom(RoomModel room) async {
     setState(() => _isLoading = false);
   }
 }
-
-void _showPasswordDialog(RoomModel room) {
-  
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => RoomPasswordDialog(
-      room: room,
-      user: _currentUser!,
-      onSuccess: (result) {
-        final roomData = result['room'];
-        final isCreator = result['is_creator'] ?? false;
-        
-        final joinedRoom = RoomModel(
-          code: roomData['code'] ?? room.code,
-          participants: roomData['participants'] ?? room.participants + 1,
-          lastActive: DateTime.now().toIso8601String(),
-          nickname: _currentUser!.name,
-          status: roomData['status'] ?? room.status,
-          logoPath: roomData['logo_path'] ?? room.logoPath,
-          userLimits: roomData['user_limits'] ?? room.userLimits,
-        );
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('✅ Successfully joined ${room.code}!'),
-            backgroundColor: const Color(0xFFFF00ff),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-        _fetchRooms();
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) {
-            _navigateToRoom(joinedRoom, _currentUser!);
-          }
-        });
-      },
-    ),
-  );
-}
-
 
 void _navigateToRoom(RoomModel room, UserModel user) {
     Navigator.push(
@@ -366,7 +327,7 @@ Future<void> _fetchRooms() async {
     }
   }
 
-  String _getRandomMatrixSymbol() {
+String _getRandomMatrixSymbol() {
     const String chars = '0101010101002001001001001001010101010101010101010101010101010010101';
     return chars[_random.nextInt(chars.length)];
   }
@@ -395,9 +356,9 @@ Future<void> _fetchRooms() async {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withOpacity(0.8),
-                  Colors.black.withOpacity(0.4),
-                  Colors.black.withOpacity(0.8),
+                  Colors.black.withOpacity(0.2),
+                  Colors.black.withOpacity(0.1),
+                  Colors.black.withOpacity(0.2),
                 ],
               ),
             ),
