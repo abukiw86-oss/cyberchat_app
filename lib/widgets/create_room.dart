@@ -1,7 +1,9 @@
 // lib/widgets/create_room_dialog.dart
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
-import '../services/room_service.dart';
+import '../models/rooms_model.dart';
+import '../services/get_rooms.dart'; 
+import 'input_room_password.dart'; 
 
 class CreateRoomDialog extends StatefulWidget {
   final UserModel user;
@@ -20,7 +22,7 @@ class CreateRoomDialog extends StatefulWidget {
 class _CreateRoomDialogState extends State<CreateRoomDialog> {
   final _formKey = GlobalKey<FormState>();
   final _roomCodeController = TextEditingController();
-  final RoomApiService _apiService = RoomApiService();
+  final RoomService _roomService = RoomService(); 
   
   String _roomType = 'public';
   bool _isLoading = false;
@@ -60,7 +62,7 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
                   ),
                   const SizedBox(width: 12),
                   const Text(
-                    'CREATE NEW ROOM',
+                    'CREATE / JOIN NEW ROOM',
                     style: TextStyle(
                       color: Color(0xFF00ffff),
                       fontSize: 18,
@@ -72,7 +74,7 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
               ),
               
               const SizedBox(height: 24),
-              
+
               // Room Code Input
               TextFormField(
                 controller: _roomCodeController,
@@ -112,7 +114,7 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
               ),
               
               const SizedBox(height: 20),
-              
+
               // Room Type Selection
               const Text(
                 'Room Type',
@@ -218,7 +220,7 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
                 const SizedBox(height: 20),
               ],
               
-              // Action Buttons
+              // Loading Indicator or Buttons
               if (_isLoading)
                 const Center(
                   child: CircularProgressIndicator(
@@ -244,7 +246,7 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: _createRoom,
+                        onPressed: _createOrJoinRoom,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF00ffff),
                           foregroundColor: Colors.black,
@@ -308,7 +310,7 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
     );
   }
 
-  Future<void> _createRoom() async {
+  Future<void> _createOrJoinRoom() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -317,23 +319,39 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
     });
 
     try {
-      final result = await _apiService.joinRoom(
+      final result = await _roomService.joinRoom(
         roomCode: _roomCodeController.text.trim(),
         nickname: widget.user.name,
         roomType: _roomType,
       );
 
-      if (result['success']) {
-        Navigator.pop(context);
+      print('Create room result: $result'); 
+
+      if (result['success'] == true) {
+        Navigator.pop(context); 
         widget.onRoomCreated(result);
-      } else {
+      } 
+      else if (result['requires_password'] == true) {
+        final room = RoomModel(
+          code: _roomCodeController.text.trim(),
+          participants: 0,
+          lastActive: DateTime.now().toIso8601String(),
+          nickname: widget.user.name,
+          status: 'private',
+          logoPath: '',
+          userLimits: 0,
+        );
+
+        _showPasswordDialog(room);
+      }
+      else {
         setState(() {
-          _errorMessage = result['message'];
+          _errorMessage = result['message'] ?? 'Failed to create/join room';
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Failed to create room: $e';
+        _errorMessage = 'Error: $e';
       });
     } finally {
       if (mounted) {
@@ -342,6 +360,28 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
         });
       }
     }
+  }
+
+  void _showPasswordDialog(RoomModel room) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => RoomPasswordDialog(
+        room: room,
+        user: widget.user, 
+        onSuccess: (result) {
+          Navigator.pop(context); 
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('✅ Successfully joined ${room.code}!'),
+              backgroundColor: const Color(0xFFFF00ff),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          widget.onRoomCreated(result);
+        },
+      ),
+    );
   }
 
   @override
