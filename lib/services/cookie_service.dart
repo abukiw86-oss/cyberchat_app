@@ -12,7 +12,6 @@ class CookieService {
   void saveCookies(Map<String, String> headers) {
     final cookies = headers['set-cookie'];
     if (cookies != null && cookies.isNotEmpty) {
-      // Parse multiple cookies
       final cookieList = cookies.split(',').map((e) => e.trim()).toList();
       
       for (var cookie in cookieList) {
