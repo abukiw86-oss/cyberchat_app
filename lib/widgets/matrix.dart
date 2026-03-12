@@ -19,7 +19,6 @@ class MatrixRainPainter extends CustomPainter {
       fontWeight: .w900,
       fontFamily: 'monospace',
     );
-
     const textSpan = TextSpan(text: '0', style: textStyle);
     final textPainter = TextPainter(
       text: textSpan,
@@ -30,7 +29,7 @@ class MatrixRainPainter extends CustomPainter {
       textPainter.text = TextSpan(
         text: symbol.symbol,
         style: textStyle.copyWith(
-          color: const Color.fromARGB(255, 255, 0, 0).withOpacity(0.1 + Random().nextDouble() * 0.3),
+          color: const Color.fromARGB(255, 255, 0, 0).withOpacity(0.7 + Random().nextDouble() * 0.3),
         ),
       );
       textPainter.layout();
