@@ -34,4 +34,18 @@ class MessageModel {
       userLogo: json['user_logo'],
     );
   }
+
+  // ✅ ADD THIS METHOD
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nickname': nickname,
+      'message': message,
+      'file_path': filePath,
+      'file_paths': filePaths,
+      'created_at': createdAt,
+      'visitor_hash': visitorHash,
+      'user_logo': userLogo,
+    };
+  }
 }

@@ -1,3 +1,4 @@
+// lib/models/rooms_model.dart
 class RoomModel {
   final String code;
   final int participants;
@@ -5,7 +6,7 @@ class RoomModel {
   final String nickname;
   final String status;
   final String logoPath;
-  final int userLimits;
+  final String userLimits;
 
   RoomModel({
     required this.code,
@@ -18,29 +19,50 @@ class RoomModel {
   });
 
   factory RoomModel.fromJson(Map<String, dynamic> json) {
+    // Safe integer parser
     int toInt(dynamic value) {
       if (value == null) return 0;
       if (value is int) return value;
+      if (value is double) return value.toInt();
       if (value is String) {
         return int.tryParse(value) ?? 0;
       }
-      if (value is double) return value.toInt();
       return 0;
     }
 
+    // Safe string parser
+    String toString(dynamic value) {
+      if (value == null) return '';
+      if (value is String) return value;
+      return value.toString();
+    }
+
     return RoomModel(
-      code: json['code'] ?? '',
+      code: toString(json['code']),
       participants: toInt(json['participants']),
-      lastActive: json['last_active'] ?? '',
-      nickname: json['nickname'] ?? '',
-      status: json['status'] ?? 'private',
-      logoPath: json['logo_path'] ?? '',
-      userLimits: toInt(json['user_limits'] ?? json['participant_limit'] ?? 0), 
+      lastActive: toString(json['last_active']),
+      nickname: toString(json['nickname']),
+      status: toString(json['status']).toLowerCase(),
+      logoPath: toString(json['logo_path']),
+      userLimits: toString(json['user_limits']),
     );
   }
 
+  // ✅ ADD THIS METHOD
+  Map<String, dynamic> toJson() {
+    return {
+      'code': code,
+      'participants': participants,
+      'last_active': lastActive,
+      'nickname': nickname,
+      'status': status,
+      'logo_path': logoPath,
+      'user_limits': userLimits,
+    };
+  }
+
   bool get isPublic => status.toLowerCase() == 'public';
-  bool get hasLogo => logoPath.isNotEmpty;
+  bool get haslogo => logoPath.isNotEmpty && logoPath != 'null' && logoPath != '';
   String get roomStatusIcon => isPublic ? '🌐' : '🔒';
   String get participantDisplay => participants == 1 ? '1 user' : '$participants users';
 }

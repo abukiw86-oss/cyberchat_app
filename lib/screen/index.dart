@@ -1,6 +1,5 @@
 
 import 'package:flutter/material.dart';
-import '../widgets/create_room.dart';
 import '../widgets/matrix.dart';
 import '../widgets/user_data_display.dart';
 import 'dart:async';
@@ -90,107 +89,6 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
       }
     });
   }
-
-Future<void> _logout() async {
-  try {
-    setState(() {
-      _isLoading = true;
-    });
-    final authService = AuthService();
-    await authService.logout();
-    await _cookieService.clearCookies();
-    
-    setState(() {
-      _currentUser = null;
-      _isLoading = false;
-    });
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Logged out successfully'),
-          backgroundColor: Color(0xFF00ff00),
-        ),
-      );
-      _fetchRooms();
-    }
-  } catch (e) {
-    setState(() {
-      _isLoading = false;
-    });
-    
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Logout error!'),
-          backgroundColor: const Color.fromARGB(255, 255, 47, 0),
-        ),
-      );
-    }
-  }
-}
-
-void _showCreateRoomDialog() {
-  if (_currentUser == null) {
-    _showAuthDialog();
-    return;
-  }
-
-  showDialog(
-    context: context,
-    builder: (context) => CreateRoomDialog(
-      user: _currentUser!,
-      onRoomCreated: (result) {
-        final roomData = result['room'];
-        final isCreator = result['is_creator'] ?? true;
-        final inviteCode = result['invite_code'];
-        
-        final newRoom = RoomModel(
-          code: roomData['code'] ?? _roomCode,
-          participants: 1,
-          lastActive: DateTime.now().toIso8601String(),
-          nickname: _currentUser!.name,
-          status: roomData['status'] ?? _roomType,
-          logoPath: roomData['logo_path'] ?? '',
-          userLimits: roomData['user_limits'] ?? 0,
-        );
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Room "$_roomCode" created successfully!',
-                  style: const TextStyle(color: Colors.black),
-                ),
-                if (inviteCode != null && inviteCode.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    'Invite Code: $inviteCode',
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            backgroundColor: const Color(0xFF00ffff),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-        _fetchRooms();
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) {
-            _navigateToRoom(newRoom, _currentUser!);
-          }
-        });
-      },
-    ),
-  );
-}
-
 Future<void> _checkExistingSession() async {
     final authService = AuthService();
     try {
@@ -237,7 +135,7 @@ Future<void> _joinRoom(RoomModel room) async {
   try {
     final result = await _roomService.joinRoom(
       roomCode: room.code,
-      nickname: _currentUser!.name,
+      nickname: _currentUser!.displayName,
     );
 
     print('Join room response: $result'); 
@@ -296,7 +194,7 @@ Future<void> _fetchRooms() async {
   }
 
 String _getRandomMatrixSymbol() {
-    const String chars = '0101010101002001001001001001010101010101010101010101010101010010101';
+    const String chars = '0101010101001001001001001001010101010101010101010101010101010010101';
     return chars[_random.nextInt(chars.length)];
   }
 
@@ -310,7 +208,7 @@ String _getRandomMatrixSymbol() {
   }
 
   @override
-  Widget build(BuildContext context) {
+Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
@@ -340,8 +238,6 @@ String _getRandomMatrixSymbol() {
                 Expanded(
                   child: _buildRoomsSection(),
                 ),
-                _buildActionButtons(),
-                _buildStatusBar(),
               ],
             ),
           ),
@@ -382,11 +278,12 @@ Widget _buildUserButton() {
         _currentUser = null;
       });
       _fetchRooms();
+      Navigator.of(context);
     },
   );
 }
 
-  Widget _buildHeader() {
+Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -506,7 +403,7 @@ Widget _buildUserButton() {
     );
   }
 
-  Widget _buildRoomsSection() {
+Widget _buildRoomsSection() {
     if (_isLoading) {
       return Center(
         child: Column(
@@ -553,17 +450,11 @@ Widget _buildUserButton() {
               ),
             ),
             const SizedBox(height: 20),
-            _buildCyberSmallButton(
-              label: 'RETRY',
-              icon: Icons.refresh,
-              color: const Color(0xFF00ffff),
-              onTap: _fetchRooms,
-            ),
+            ElevatedButton(onPressed: _fetchRooms, child: Icon(Icons.refresh))
           ],
         ),
       );
     }
-
     if (_rooms.isEmpty) {
       return Center(
         child: Column(
@@ -633,7 +524,7 @@ Widget _buildUserButton() {
     );
   }
 
-  Widget _buildRoomCard(RoomModel room) {
+Widget _buildRoomCard(RoomModel room) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -770,7 +661,7 @@ Widget _buildUserButton() {
     );
   }
 
-  String _formatDate(String dateTimeString) {
+String _formatDate(String dateTimeString) {
     try {
       final dateTime = DateTime.parse(dateTimeString.replaceAll(' ', 'T'));
       final now = DateTime.now();
@@ -790,195 +681,7 @@ Widget _buildUserButton() {
     }
   }
 
-  Widget _buildActionButtons() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      child: Row(
-        children: [
-        Expanded(
-            child: _buildCyberSmallButton(
-              label: 'CREATE',
-              icon: Icons.add,
-              color: const Color(0xFF00ffff),
-              onTap: _showCreateRoomDialog,
-            ),
-          ),
-          const SizedBox(width: 10),
-          if (_currentUser != null) 
-              Expanded(
-                child: _buildCyberSmallButton(
-                  label: 'LOGOUT',
-                  icon: Icons.logout,
-                  color: const Color.fromARGB(255, 255, 47, 0),
-                  onTap: _logout,
-                ),
-              ),
-          if (_currentUser == null) 
-                  Expanded(
-                    child: _buildCyberSmallButton(
-                      label: 'START',
-                      icon: Icons.login,
-                      color: const Color.fromARGB(255, 44, 31, 225),
-                      onTap: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => RecoveryAuthDialog(
-                            onSuccess: (user) {
-                              setState(() {
-                                _currentUser = user;
-                              });
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Welcome ${user.name}!'),
-                                  backgroundColor: const Color(0xFF00ff00),
-                                ),
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-       
-        ]
-      ),
-    );
-  }
-
-  Widget _buildCyberSmallButton({
-    required String label,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      height: 40,
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: color,
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(4),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.2),
-            blurRadius: 5,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          splashColor: color.withOpacity(0.2),
-          highlightColor: color.withOpacity(0.1),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: color, size: 14),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusBar() {
-    return Container(
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: const Color(0xFF00ff00).withOpacity(0.3),
-        ),
-        borderRadius: BorderRadius.circular(6),
-        color: Colors.black.withOpacity(0.7),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF00ff00),
-                  borderRadius: BorderRadius.circular(3),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF00ff00).withOpacity(0.5),
-                      blurRadius: 8,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                _currentUser != null 
-                    ? 'USER: ${_currentUser!.name}' 
-                    : 'GUEST MODE',
-                style: TextStyle(
-                  color: _currentUser != null 
-                      ? const Color(0xFF00ffff)
-                      : const Color(0xFF00ff00),
-                  fontSize: 10,
-                  letterSpacing: 1,
-                ),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              Text(
-                'ROOMS: ${_rooms.length}',
-                style: const TextStyle(
-                  color: Color(0xFF00ffff),
-                  fontSize: 10,
-                  letterSpacing: 1,
-                ),
-              ),
-              if (_currentUser == null) ...[
-                const SizedBox(width: 10),
-                GestureDetector(
-                  onTap: _showAuthDialog,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFF00ff00)),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                    child: const Text(
-                      'LOGIN',
-                      style: TextStyle(
-                        color: Color(0xFF00ff00),
-                        fontSize: 8,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildScanningLine() {
+Widget _buildScanningLine() {
     return Positioned(
       top: 0,
       left: 0,
