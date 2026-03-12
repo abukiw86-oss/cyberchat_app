@@ -236,7 +236,7 @@ Future<void> _joinPrivateRoom() async {
     final result = await _apiService.checkRoomPassword(
       roomCode: widget.room.code,
       password: _passwordController.text,
-      nickname: widget.user.name,
+      nickname: widget.user.displayName,
     );
 
     if (result['success']) {

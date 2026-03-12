@@ -52,7 +52,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       // Join or create room
       final result = await _roomservice.joinRoom(
         roomCode: widget.room.code,
-        nickname: widget.user.name,
+        nickname: widget.user.displayName,
         roomType: widget.room.status,
       );
 
@@ -144,7 +144,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     final success = await _apiService.sendMessage(
       roomCode: widget.room.code,
       message: message,
-      nickname: widget.user.name,
+      nickname: widget.user.displayName,
     );
 
     if (success && mounted) {
@@ -167,7 +167,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     
     final result = await _apiService.uploadFiles(
       roomCode: widget.room.code,
-      nickname: widget.user.name,
+      nickname: widget.user.displayName,
       files: files,
     );
 
@@ -625,7 +625,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildInfoRow('Room Code', widget.room.code),
-            _buildInfoRow('Status', widget.room.isPublic ? 'Public' : 'Private'),
+            _buildInfoRow('Status', widget.room.status == 'public' ? 'Public' : 'Private'),
             _buildInfoRow('Participants', '${_participants.length}'),
             _buildInfoRow('Your Role', _isCreator ? 'Creator' : 'Member'),
             if (_inviteCode != null && _inviteCode!.isNotEmpty) ...[
@@ -680,6 +680,6 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   }
 
   String _getVisitorId() {
-    return widget.user.recoveryHash;
+    return widget.user.recoveryHash.toString();
   }
 }
