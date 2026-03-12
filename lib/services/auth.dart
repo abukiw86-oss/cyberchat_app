@@ -9,7 +9,7 @@ class AuthService {
   final CookieService _cookieService = CookieService();
 
   Future<UserModel> authenticate({
-    required String mode, 
+    required String mode,
     required String recovery,
     required String name,
   }) async {
@@ -30,7 +30,6 @@ class AuthService {
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = json.decode(response.body);
         
-        // Save cookies from response headers
         _cookieService.saveCookies(response.headers);
         
         if (jsonResponse['success'] == true) {
@@ -46,6 +45,7 @@ class AuthService {
     }
   }
 
+  // Check current session
   Future<UserModel?> checkSession() async {
     try {
       final cookieHeader = await _cookieService.getCookieHeader();
@@ -73,6 +73,7 @@ class AuthService {
     }
   }
 
+  // Logout
   Future<void> logout() async {
     try {
       final cookieHeader = await _cookieService.getCookieHeader();
@@ -90,5 +91,4 @@ class AuthService {
       await _cookieService.clearCookies();
     }
   }
-
 }

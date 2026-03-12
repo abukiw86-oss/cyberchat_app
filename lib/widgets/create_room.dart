@@ -321,7 +321,7 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
     try {
       final result = await _roomService.joinRoom(
         roomCode: _roomCodeController.text.trim(),
-        nickname: widget.user.name,
+        nickname: widget.user.displayName,
         roomType: _roomType,
       );
 
@@ -336,10 +336,10 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
           code: _roomCodeController.text.trim(),
           participants: 0,
           lastActive: DateTime.now().toIso8601String(),
-          nickname: widget.user.name,
+          nickname: widget.user.displayName,
           status: 'private',
           logoPath: '',
-          userLimits: 0,
+          userLimits: '0',
         );
 
         _showPasswordDialog(room);
