@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/user_model.dart';
 import 'cookie_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 
 class AuthService {
-  static const String baseUrl = 'https://astufindit.x10.mx/cyberchat';
+  static String get baseUrl => dotenv.env['BASE_URL'] ?? '';
   final CookieService _cookieService = CookieService();
 
   Future<UserModel> authenticate({
@@ -45,7 +47,6 @@ class AuthService {
     }
   }
 
-  // Check current session
   Future<UserModel?> checkSession() async {
     try {
       final cookieHeader = await _cookieService.getCookieHeader();
