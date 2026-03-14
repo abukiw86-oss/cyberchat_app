@@ -3,11 +3,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/user_model.dart';
 import 'cookie_service.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-
 
 class AuthService {
-  static String get baseUrl => dotenv.env['BASE_URL'] ?? '';
+  static const String baseUrl = 'https://astufindit.x10.mx/cyberchat';
   final CookieService _cookieService = CookieService();
 
   Future<UserModel> authenticate({
@@ -35,7 +33,11 @@ class AuthService {
         _cookieService.saveCookies(response.headers);
         
         if (jsonResponse['success'] == true) {
-          return UserModel.fromJson(jsonResponse['user']);
+          final user = UserModel.fromJson(jsonResponse['user']);
+          
+          await user.saveToPrefs();
+          
+          return user;
         } else {
           throw Exception(jsonResponse['message'] ?? 'Authentication failed');
         }
@@ -47,8 +49,17 @@ class AuthService {
     }
   }
 
-  Future<UserModel?> checkSession() async {
+  Future<UserModel?> checkSession({bool forceApiCheck = false}) async {
     try {
+      if (!forceApiCheck) {
+        final cachedUser = await UserModel.loadFromPrefs();
+        if (cachedUser != null) {
+          print('📦 Using cached user from SharedPreferences');
+          return cachedUser;
+        }
+      }
+
+      print('🌐 Checking session with API');
       final cookieHeader = await _cookieService.getCookieHeader();
       
       final response = await http.get(
@@ -63,15 +74,35 @@ class AuthService {
         final Map<String, dynamic> jsonResponse = json.decode(response.body);
         
         if (jsonResponse['success'] == true) {
-          return UserModel.fromJson(jsonResponse['user']);
+          final user = UserModel.fromJson(jsonResponse['user']);
+          
+          // ✅ Update SharedPreferences with fresh data
+          await user.saveToPrefs();
+          
+          return user;
         }
       }
       
+      // If API check fails, clear stored data
+      await UserModel.clearFromPrefs();
       return null;
+      
     } catch (e) {
       print('Session check error: $e');
-      return null;
+      // On error, return cached user if available
+      return await UserModel.loadFromPrefs();
     }
+  }
+
+  // Get current user from SharedPreferences (synchronous version for quick access)
+  Future<UserModel?> getCurrentUser() async {
+    return await UserModel.loadFromPrefs();
+  }
+
+  // Get visitor ID from stored user
+  Future<String> getVisitorId() async {
+    final user = await UserModel.loadFromPrefs();
+    return user?.recoveryHash ?? '';
   }
 
   // Logout
@@ -90,6 +121,19 @@ class AuthService {
       print('Logout error: $e');
     } finally {
       await _cookieService.clearCookies();
+      // ✅ Clear user data from SharedPreferences
+      await UserModel.clearFromPrefs();
     }
+  }
+
+  // Update user data in SharedPreferences (useful after profile updates)
+  Future<void> updateStoredUser(UserModel updatedUser) async {
+    await updatedUser.saveToPrefs();
+  }
+
+  // Check if user is logged in (quick check)
+  Future<bool> isUserLoggedIn() async {
+    UserModel user = UserModel();
+    return await user.isLoggedIn();
   }
 }

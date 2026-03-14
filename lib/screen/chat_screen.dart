@@ -49,7 +49,6 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
   Future<void> _initializeRoom() async {
     try {
-      // Join or create room
       final result = await _roomservice.joinRoom(
         roomCode: widget.room.code,
         nickname: widget.user.displayName,
@@ -62,8 +61,6 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           _inviteCode = result['invite_code'];
           _isLoading = false;
         });
-        
-        // Load participants and messages
         await _loadParticipants();
         await _loadMessages();
       } else {

@@ -34,13 +34,12 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
   final CookieService _cookieService = CookieService();
   
   UserModel? _currentUser;
-  final String _roomCode = '';
-  final String _roomType = 'public';
+  final AuthService _authService = AuthService();
 
   @override
   void initState() {
     super.initState();
-    _checkExistingSession();
+     _loadSavedUser();
     
     _glitchController = AnimationController(
       vsync: this,
@@ -52,7 +51,7 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
 
-    for (int i = 0; i < 50; i++) {
+    for (int i = 0; i < 500; i++) {
       _matrixSymbols.add(
         MatrixSymbol(
           position: Offset(
@@ -89,17 +88,15 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
       }
     });
   }
-Future<void> _checkExistingSession() async {
-    final authService = AuthService();
-    try {
-      final user = await authService.checkSession();
-      if (user != null && mounted) {
-        setState(() {
-          _currentUser = user;
-        });
-      }
-    } catch (e) {
-      print('Session check error: $e');
+
+
+
+Future<void> _loadSavedUser() async {
+    final user = await _authService.getCurrentUser();
+    if (user != null && mounted) {
+      setState(() {
+        _currentUser = user;
+      });
     }
   }
 
@@ -129,23 +126,11 @@ Future<void> _joinRoom(RoomModel room) async {
     _showAuthDialog();
     return;
   }
-
   setState(() => _isLoading = true);
-
   try {
-    final result = await _roomService.joinRoom(
-      roomCode: room.code,
-      nickname: _currentUser!.displayName,
-    );
-
-    print('Join room response: $result'); 
-
-    if (result['success'] == true) {
+    if (true) {
       _navigateToRoom(room, _currentUser!);
-
-    } else {
-      print(result['message'] ?? 'Failed to join room');
-    }
+    } 
   } catch (e) {
     print('Error: $e');
   } finally {
@@ -175,7 +160,7 @@ Future<void> _fetchRooms() async {
     });
 
     try {
-      final rooms = await _roomService.fetchRooms();
+      final rooms = await _roomService.fetchRooms(forceRefresh: true);
       if (mounted) {
         setState(() {
           _rooms = rooms;
@@ -206,7 +191,6 @@ String _getRandomMatrixSymbol() {
     _refreshTimer?.cancel();
     super.dispose();
   }
-
   @override
 Widget build(BuildContext context) {
     return Scaffold(
