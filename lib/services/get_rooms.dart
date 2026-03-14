@@ -3,20 +3,23 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/rooms_model.dart';
 import 'cookie_service.dart';
-import 'chache_service.dart'; // Import cache service
+import 'chache_service.dart'; 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'auth.dart';
+
 
 class RoomService {
-  static const String baseUrl = 'https://astufindit.x10.mx/cyberchat';
+   static String get baseUrl => dotenv.env['BASE_URL'] ?? '';
   
   final CookieService _cookieService = CookieService();
   final CacheService _cacheService = CacheService(); 
+  final AuthService _authService = AuthService();
 
   // Fetch all rooms with caching
 Future<List<RoomModel>> fetchRooms({bool forceRefresh = false}) async {
   try {
     await _cookieService.loadCookies();
-    final userData = await _cookieService.getCurrentUser();
-    final visitorId = userData['visitor_id'] ?? '';
+     final visitorId = await _authService.getVisitorId();
     
     final cacheKey = 'all_rooms_$visitorId';
 
@@ -86,7 +89,7 @@ Future<List<RoomModel>> fetchRooms({bool forceRefresh = false}) async {
   }
 }
 
-  Future<Map<String, dynamic>> joinRoom({
+Future<Map<String, dynamic>> joinRoom({
     required String roomCode,
     required String nickname,
     String? password,
@@ -94,8 +97,7 @@ Future<List<RoomModel>> fetchRooms({bool forceRefresh = false}) async {
   }) async {
     try {
       final cookieHeader = await _cookieService.getCookieHeader();
-      final userData = await _cookieService.getCurrentUser();
-      final visitorId = userData['visitor_id'] ?? '';
+      final visitorId = await _authService.getVisitorId();
       
       final response = await http.post(
         Uri.parse('$baseUrl/room_api.php?action=join'),
@@ -116,11 +118,8 @@ Future<List<RoomModel>> fetchRooms({bool forceRefresh = false}) async {
       if (response.statusCode == 200) {
         final result = json.decode(response.body);
         
-        // If successful, invalidate rooms cache
         if (result['success'] == true) {
           await _cacheService.clearRoomsCache();
-          // Also clear user created rooms cache
-          // await _cacheService.clearRoomsCache(key: 'user_created_$visitorId');
         }
         
         return result;
@@ -140,16 +139,15 @@ Future<List<RoomModel>> fetchRooms({bool forceRefresh = false}) async {
     }
   }
 
-  // Check room password (no caching needed)
-  Future<Map<String, dynamic>> checkRoomPassword({
+Future<Map<String, dynamic>> checkRoomPassword({
     required String roomCode,
     required String password,
     required String nickname,
   }) async {
     try {
       final cookieHeader = await _cookieService.getCookieHeader();
-      final userData = await _cookieService.getCurrentUser();
-      final visitorId = userData['visitor_id'] ?? '';
+
+      final visitorId = await _authService.getVisitorId();
       
       final response = await http.post(
         Uri.parse('$baseUrl/check_room_password.php'),
@@ -189,16 +187,12 @@ Future<List<RoomModel>> fetchRooms({bool forceRefresh = false}) async {
     }
   }
 
-  // Fetch user created rooms with caching
-  Future<List<RoomModel>> fetchUsercreatedRooms({bool forceRefresh = false}) async {
+Future<List<RoomModel>> fetchUsercreatedRooms({bool forceRefresh = false}) async {
     try {
       await _cookieService.loadCookies();
-      final userData = await _cookieService.getCurrentUser();
-      final visitorId = userData['visitor_id'] ?? '';
-      
+      final visitorId = await _authService.getVisitorId();
       final cacheKey = 'user_created_$visitorId';
       
-      // Check cache first
       if (!forceRefresh) {
         final cachedRooms = _cacheService.getCachedRooms(key: cacheKey);
         if (cachedRooms != null) {
@@ -227,12 +221,11 @@ Future<List<RoomModel>> fetchRooms({bool forceRefresh = false}) async {
           List<dynamic> roomsJson = jsonResponse['user_rooms'] ?? jsonResponse['rooms'] ?? [];
           final rooms = roomsJson.map((json) => RoomModel.fromJson(json)).toList();
           
-          // Cache the rooms
           await _cacheService.cacheRooms(rooms, key: cacheKey);
           
           return rooms;
         } else {
-          return []; // Return empty list on API error
+          return []; 
         }
       } else {
         throw Exception('Failed to load rooms: ${response.statusCode}');
@@ -240,7 +233,6 @@ Future<List<RoomModel>> fetchRooms({bool forceRefresh = false}) async {
     } catch (e) {
       print('Error fetching user created rooms: $e');
       
-      // Try to return cached data on error
       final userData = await _cookieService.getCurrentUser();
       final visitorId = userData['visitor_id'] ?? '';
       final cacheKey = 'user_created_$visitorId';
@@ -251,17 +243,17 @@ Future<List<RoomModel>> fetchRooms({bool forceRefresh = false}) async {
         return cachedRooms;
       }
       
-      return []; // Return empty list on error
+      return []; 
     }
   }
 
-  // Add method to manually refresh all room data
-  Future<void> refreshAllRoomData() async {
+Future<void> refreshAllRoomData() async {
     await _cacheService.clearRoomsCache();
     await fetchRooms(forceRefresh: true);
     
-    final userData = await _cookieService.getCurrentUser();
-    final visitorId = userData['visitor_id'] ?? '';
+    await _cookieService.loadCookies();
+    final visitorId = await _authService.getVisitorId();
+
     if (visitorId.isNotEmpty) {
       await fetchUsercreatedRooms(forceRefresh: true);
     }

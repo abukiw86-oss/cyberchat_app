@@ -5,12 +5,12 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:cyberchat/models/user_model.dart';
 import 'package:cyberchat/services/cookie_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class UserService {
-  static const String baseUrl = 'https://astufindit.x10.mx/cyberchat';
+  static String get baseUrl => dotenv.env['BASE_URL'] ?? '';
   final CookieService _cookieService = CookieService();
 
-  // Get current user profile
   Future<UserModel> getCurrentUser() async {
     try {
       final cookieHeader = await _cookieService.getCookieHeader();
@@ -36,33 +36,6 @@ class UserService {
     }
   }
 
-  // Check session (kept for backward compatibility)
-  Future<UserModel> checkSession() async {
-    try {
-      final cookieHeader = await _cookieService.getCookieHeader();
-      
-      final response = await http.get(
-        Uri.parse('$baseUrl/api.php?action=check_session'),
-        headers: {
-          'Content-Type': 'application/json',
-          ...cookieHeader,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final jsonResponse = json.decode(response.body);
-        if (jsonResponse['success'] == true) {
-          return UserModel.fromJson(jsonResponse['user']);
-        }
-      }
-      return UserModel.guest();
-    } catch (e) {
-      print('Error checking session: $e');
-      return UserModel.guest();
-    }
-  }
-
-  // Upload profile image
   Future<Map<String, dynamic>> uploadProfileImage(File imageFile) async {
     try {
       final cookieHeader = await _cookieService.getCookieHeader();
@@ -73,20 +46,16 @@ class UserService {
         'POST',
         Uri.parse('$baseUrl/api.php?action=upload_profile_image'),
       );
-      
-      // Add headers
+       
       request.headers.addAll({
         ...cookieHeader,
       });
-      
-      // Add visitor_id as field
+       
       request.fields['visitor_id'] = visitorId;
-      
-      // Prepare file
+       
       var stream = http.ByteStream(imageFile.openRead());
       var length = await imageFile.length();
-      
-      // Determine content type based on file extension
+       
       var contentType = 'image/jpeg';
       if (imageFile.path.toLowerCase().endsWith('.png')) {
         contentType = 'image/png';
@@ -105,8 +74,7 @@ class UserService {
       );
       
       request.files.add(multipartFile);
-      
-      // Send request
+       
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
       
@@ -126,8 +94,7 @@ class UserService {
       };
     }
   }
-
-  // Update user profile
+ 
   Future<Map<String, dynamic>> updateUserProfile({
     required String name,
     required String bio,
@@ -146,18 +113,15 @@ class UserService {
           'message': 'Name cannot be empty',
         };
       }
-      
-      // Prepare request body
+       
       Map<String, dynamic> requestBody = {
         'action': 'update_profile',
         'visitor_id': visitorId,
         'name': name.trim(),
         'bio': bio.trim(),
       };
-      
-      // Only include recovery phrase if provided and not empty
-      if (recoveryPhrase != null && recoveryPhrase.isNotEmpty) {
-        // Validate recovery phrase format
+       
+      if (recoveryPhrase != null && recoveryPhrase.isNotEmpty) { 
         if (!RegExp(r'^[a-zA-Z0-9_-]+$').hasMatch(recoveryPhrase)) {
           return {
             'success': false,
@@ -166,8 +130,7 @@ class UserService {
         }
         requestBody['recovery_phrase'] = recoveryPhrase;
       }
-      
-      // Include user logo if provided
+       
       if (userLogo != null && userLogo.isNotEmpty) {
         requestBody['user_logo'] = userLogo;
       }
@@ -183,10 +146,8 @@ class UserService {
         print(response.body);
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(response.body);
-        
-        // Update cookies if recovery phrase changed
-        if (jsonResponse['success'] == true && jsonResponse['user'] != null) {
-          // Update local cookies with new data if needed
+         
+        if (jsonResponse['success'] == true && jsonResponse['user'] != null) { 
           await _updateLocalUserData(jsonResponse['user']);
         }
         
@@ -205,23 +166,21 @@ class UserService {
       };
     }
   }
-
-  // Update profile with image upload in one call
+ 
   Future<Map<String, dynamic>> updateProfileWithImage({
     required String name,
     required String bio,
     File? imageFile,
     String? recoveryPhrase,
   }) async {
-    try {
-      // First upload image if provided
+    try { 
       String? imageUrl;
       if (imageFile != null) {
         final uploadResult = await uploadProfileImage(imageFile);
         if (uploadResult['success'] == true) {
           imageUrl = uploadResult['image_url'];
         } else {
-          return uploadResult; // Return upload error
+          return uploadResult;  
         }
       }
       
