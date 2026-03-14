@@ -1,4 +1,3 @@
-// lib/models/message_model.dart
 class MessageModel {
   final int id;
   final String nickname;
@@ -35,7 +34,6 @@ class MessageModel {
     );
   }
 
-  // ✅ ADD THIS METHOD
   Map<String, dynamic> toJson() {
     return {
       'id': id,

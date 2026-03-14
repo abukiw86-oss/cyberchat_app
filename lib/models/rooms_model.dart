@@ -1,4 +1,3 @@
-// lib/models/rooms_model.dart
 class RoomModel {
   final String code;
   final int participants;
@@ -19,7 +18,6 @@ class RoomModel {
   });
 
   factory RoomModel.fromJson(Map<String, dynamic> json) {
-    // Safe integer parser
     int toInt(dynamic value) {
       if (value == null) return 0;
       if (value is int) return value;
@@ -29,8 +27,6 @@ class RoomModel {
       }
       return 0;
     }
-
-    // Safe string parser
     String toString(dynamic value) {
       if (value == null) return '';
       if (value is String) return value;
@@ -48,7 +44,6 @@ class RoomModel {
     );
   }
 
-  // ✅ ADD THIS METHOD
   Map<String, dynamic> toJson() {
     return {
       'code': code,
