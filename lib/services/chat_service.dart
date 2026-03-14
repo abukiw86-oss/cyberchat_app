@@ -4,9 +4,11 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import '../models/message_model.dart';
 import 'cookie_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 
 class RoomApiService {
-  static const String baseUrl = 'https://astufindit.x10.mx/cyberchat';
+  static String get baseUrl => dotenv.env['BASE_URL'] ?? '';
   final CookieService _cookieService = CookieService();
 
   Future<List<MessageModel>> getMessages(String roomCode, {int lastId = 0}) async {
