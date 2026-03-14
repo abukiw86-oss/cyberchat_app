@@ -13,7 +13,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
   await SharedPreferences.getInstance();
-  await dotenv.load(filename:".env");
+
   final appDocumentDir = await getApplicationDocumentsDirectory();
   Hive.init(appDocumentDir.path);
   
@@ -32,6 +32,9 @@ void main() async{
   
   final cacheService = CacheService();
   await cacheService.ensureBoxesAreOpen();
+  await dotenv.load(fileName:'.env');
+  
+
   runApp(const CyberChatApp());
 }
 

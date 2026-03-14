@@ -61,10 +61,10 @@ class RoomModelAdapter extends TypeAdapter<RoomModel> {
     writer.writeString(obj.code);
     writer.writeInt(obj.participants);
     writer.writeInt(DateTime.parse(obj.lastActive).millisecondsSinceEpoch);
-    writer.writeString(obj.nickname!);
+    writer.writeString(obj.nickname);
     writer.writeString(obj.status);
-    writer.writeString(obj.logoPath!);
-    // writer.writeString(obj.userLimits);
+    writer.writeString(obj.logoPath);
+    writer.writeString(obj.userLimits);
   }
 }
 
