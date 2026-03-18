@@ -176,7 +176,7 @@ Future<void> _updateProfile() async {
     }
 
     if (result['success'] == true) {
-      final updatedUser = await _userService.getCurrentUser();
+      final updatedUser = await _userService.getCurrentUser(visitorid: widget.user.recoveryHash.toString());
       
       setState(() {
         _isLoading = false;
@@ -185,7 +185,8 @@ Future<void> _updateProfile() async {
           _imageUrl = result['user']['user_logo'];
         }
         _selectedImage = null;
-      });
+      }
+      );
       widget.onProfileUpdated(updatedUser);
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) {
@@ -205,7 +206,8 @@ Future<void> _updateProfile() async {
     });
   }
 }
-  void _showError(String message) {
+  
+void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),

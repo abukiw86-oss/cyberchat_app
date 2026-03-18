@@ -6,7 +6,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/adapters.dart';
 import 'models/user_model.dart';
-import 'services/chache_service.dart';
+import 'services/rooms_cache_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 
@@ -30,7 +30,7 @@ void main() async{
   await Hive.openBox<List>('participantsBox');
   await Hive.openBox<Map>('roomInfoBox');
   
-  final cacheService = CacheService();
+  final cacheService = RoomCacheService();
   await cacheService.ensureBoxesAreOpen();
   await dotenv.load(fileName:'.env');
   
