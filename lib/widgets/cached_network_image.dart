@@ -1,7 +1,6 @@
-// lib/widgets/cached_network_image_widget.dart
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../services/chache_service.dart';
+import '../services/rooms_cache_service.dart';
 
 class CachedNetworkImageWidget extends StatelessWidget {
   final String imageUrl;
@@ -46,7 +45,7 @@ class CachedNetworkImageWidget extends StatelessWidget {
               color: Colors.grey,
             ),
           ),
-      cacheManager: CacheService.imageCache,
+      cacheManager: RoomCacheService.imageCache,
     );
   }
 }
