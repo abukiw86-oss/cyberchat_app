@@ -8,7 +8,9 @@ class AuthService {
   static const String baseUrl = 'https://astufindit.x10.mx/cyberchat';
   final CookieService _cookieService = CookieService();
 
-  Future<UserModel> authenticate({
+
+
+Future<UserModel> authenticate({
     required String mode,
     required String recovery,
     required String name,
@@ -54,12 +56,12 @@ class AuthService {
       if (!forceApiCheck) {
         final cachedUser = await UserModel.loadFromPrefs();
         if (cachedUser != null) {
-          print('📦 Using cached user from SharedPreferences');
+          print(' Using cached user from SharedPreferences');
           return cachedUser;
         }
       }
 
-      print('🌐 Checking session with API');
+      print('Checking session with API');
       final cookieHeader = await _cookieService.getCookieHeader();
       
       final response = await http.get(
@@ -75,37 +77,28 @@ class AuthService {
         
         if (jsonResponse['success'] == true) {
           final user = UserModel.fromJson(jsonResponse['user']);
-          
-          // ✅ Update SharedPreferences with fresh data
           await user.saveToPrefs();
-          
           return user;
         }
       }
-      
-      // If API check fails, clear stored data
       await UserModel.clearFromPrefs();
       return null;
       
     } catch (e) {
       print('Session check error: $e');
-      // On error, return cached user if available
       return await UserModel.loadFromPrefs();
     }
   }
 
-  // Get current user from SharedPreferences (synchronous version for quick access)
   Future<UserModel?> getCurrentUser() async {
     return await UserModel.loadFromPrefs();
   }
 
-  // Get visitor ID from stored user
   Future<String> getVisitorId() async {
     final user = await UserModel.loadFromPrefs();
     return user?.recoveryHash ?? '';
   }
 
-  // Logout
   Future<void> logout() async {
     try {
       final cookieHeader = await _cookieService.getCookieHeader();
@@ -121,17 +114,10 @@ class AuthService {
       print('Logout error: $e');
     } finally {
       await _cookieService.clearCookies();
-      // ✅ Clear user data from SharedPreferences
       await UserModel.clearFromPrefs();
     }
   }
 
-  // Update user data in SharedPreferences (useful after profile updates)
-  Future<void> updateStoredUser(UserModel updatedUser) async {
-    await updatedUser.saveToPrefs();
-  }
-
-  // Check if user is logged in (quick check)
   Future<bool> isUserLoggedIn() async {
     UserModel user = UserModel();
     return await user.isLoggedIn();

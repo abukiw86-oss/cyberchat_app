@@ -10,9 +10,9 @@ import '../services/auth.dart';
 import '../screen/chat_screen.dart';
 import '../models/user_model.dart';
 import '../widgets/auth_widget.dart'; 
-import 'package:cyberchat/services/cookie_service.dart';
 import '../services/internet_cheker.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
+import '../widgets/handle_errors_in_scaffoldOfMessenger.dart';
 
 
 class CyberChatHomePage extends StatefulWidget {
@@ -34,13 +34,12 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
   bool _isLoading = true;
   String? _errorMessage;
   Timer? _refreshTimer;
-  final CookieService _cookieService = CookieService();
-  
+
   UserModel? _currentUser;
   final AuthService _authService = AuthService();
 
   @override
-  void initState() {
+void initState() {
     super.initState();
      _loadSavedUser();
     
@@ -88,6 +87,9 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (mounted) {
         _fetchRooms();
+        setState(() {
+          _isLoading = true;
+        });
       }
     });
   }
@@ -109,13 +111,7 @@ void _showAuthDialog() {
           setState(() {
             _currentUser = user;
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Welcome ${user.name}!'),
-              backgroundColor: const Color(0xFF00ff00),
-            ),
-            
-          );
+        CyberMessenger.show('Welcome ${user.name}!');
           _fetchRooms();
         },
       ),
@@ -153,31 +149,32 @@ void _showJoinRoomDialog(RoomModel room) {
   }
 
 Future<void> _fetchRooms() async {
-    if (!mounted) return;
-    
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+  if (!mounted) return;
 
-    try {
-      final rooms = await _roomService.fetchRooms(forceRefresh: true);
-      if (mounted) {
-        setState(() {
-          _rooms = rooms;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = e.toString();
-          _isLoading = false;
-        });
-      }
-      print('hh $_errorMessage');
+  setState(() {
+    _isLoading = true;
+    _errorMessage = null;
+  });
+
+  try {
+    final rooms = await _roomService.fetchRooms(forceRefresh: true);
+
+    if (mounted) {
+      setState(() {
+        _rooms = rooms;
+        _isLoading = false;
+      });
     }
+  } catch (e) {
+    print(e);
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+    print('Fetch Error: $_errorMessage');
   }
+}
 
 String _getRandomMatrixSymbol() {
     const String chars = '0101010101001001001001001001010101010101010101010101010101010010101';
@@ -580,33 +577,9 @@ Widget _buildRoomCard(RoomModel room) {
                               fontSize: 12,
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Icon(
-                            Icons.access_time,
-                            color: const Color(0xFF00ffff),
-                            size: 12,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _formatDate(room.lastActive),
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
-                          ),
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        'Host: ${room.nickname}',
-                        style: TextStyle(
-                          color: room.isPublic 
-                              ? const Color(0xFF00ff00).withOpacity(0.7)
-                              : const Color.fromARGB(255, 255, 0, 0).withOpacity(0.7),
-                          fontSize: 11,
-                          letterSpacing: 1,
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -617,27 +590,6 @@ Widget _buildRoomCard(RoomModel room) {
       ),
     );
   }
-
-String _formatDate(String dateTimeString) {
-    try {
-      final dateTime = DateTime.parse(dateTimeString.replaceAll(' ', 'T'));
-      final now = DateTime.now();
-      final difference = now.difference(dateTime);
-      
-      if (difference.inDays > 0) {
-        return '${difference.inDays}d ago';
-      } else if (difference.inHours > 0) {
-        return '${difference.inHours}h ago';
-      } else if (difference.inMinutes > 0) {
-        return '${difference.inMinutes}m ago';
-      } else {
-        return 'Just now';
-      }
-    } catch (e) {
-      return 'Unknown';
-    }
-  }
-
 Widget _buildScanningLine() {
     return Positioned(
       top: 0,
