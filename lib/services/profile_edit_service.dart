@@ -11,16 +11,21 @@ class UserService {
   static String get baseUrl => dotenv.env['BASE_URL'] ?? '';
   final CookieService _cookieService = CookieService();
 
-  Future<UserModel> getCurrentUser() async {
+  Future<UserModel> getCurrentUser( {required String visitorid}) async {
     try {
       final cookieHeader = await _cookieService.getCookieHeader();
       
-      final response = await http.get(
+        Map<String, dynamic> visitor_id = {
+        'visitor_id': visitorid,
+      };
+      final response = await http.post(
         Uri.parse('$baseUrl/api.php?action=get_user_profile'),
         headers: {
           'Content-Type': 'application/json',
           ...cookieHeader,
         },
+        
+        body:json.encode(visitor_id)
       );
 
       if (response.statusCode == 200) {

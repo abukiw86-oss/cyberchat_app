@@ -3,38 +3,39 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/rooms_model.dart';
 import 'cookie_service.dart';
-import 'chache_service.dart'; 
+import 'rooms_cache_service.dart'; 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'auth.dart';
+import 'internet_cheker.dart';
 
 
 class RoomService {
    static String get baseUrl => dotenv.env['BASE_URL'] ?? '';
   
   final CookieService _cookieService = CookieService();
-  final CacheService _cacheService = CacheService(); 
+  final RoomCacheService _cacheService = RoomCacheService(); 
   final AuthService _authService = AuthService();
 
-  // Fetch all rooms with caching
 Future<List<RoomModel>> fetchRooms({bool forceRefresh = false}) async {
   try {
-    await _cookieService.loadCookies();
-     final visitorId = await _authService.getVisitorId();
-    
+    final userData = await _cookieService.getCurrentUser();
+    final visitorId = userData['visitor_id'] ?? '';
     final cacheKey = 'all_rooms_$visitorId';
+    final cachedRooms = _cacheService.getCachedRooms(key: cacheKey);
+    final bool isOnline = await NetworkService().isConnected;
 
+    if (!isOnline && !forceRefresh) {
+    if (cachedRooms != null) {
+      print('📦 Returning cached rooms due to error');
+      return cachedRooms;
+    }
+    }
+    await _cookieService.loadCookies();
     print('🌐 Fetching fresh rooms from API');
     var uri = Uri.parse('$baseUrl/fetch_rooms.php?action=get_user_rooms&visitor_id=$visitorId');
-
+    print(uri);
     late http.Response response;
-    if (visitorId.isNotEmpty) {
-      response = await http.get(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      );
-    } else {
+
       response = await http.get(
         uri,
         headers: {
@@ -42,7 +43,6 @@ Future<List<RoomModel>> fetchRooms({bool forceRefresh = false}) async {
           'Accept': 'application/json',
         },
       );
-    }
     print('🔍 Response status: ${response.statusCode}');
     print('🔍 Response body: ${response.body}');
     
@@ -59,6 +59,7 @@ Future<List<RoomModel>> fetchRooms({bool forceRefresh = false}) async {
           for (var room in rooms) {
             if (room.haslogo) {
               _cacheService.precacheImage('${baseUrl}/${room.logoPath}');
+              print('${baseUrl}/${room.logoPath}');
             }
           }
           
@@ -67,7 +68,7 @@ Future<List<RoomModel>> fetchRooms({bool forceRefresh = false}) async {
           throw Exception(jsonResponse['message'] ?? 'Failed to load rooms');
         }
       } else {
-        print('❌ Response is not JSON. First 200 chars: ${response.body}');
+        print('Response is not JSON ${response.body}');
         throw Exception('Invalid response format from server');
       }
     } else {
@@ -82,7 +83,7 @@ Future<List<RoomModel>> fetchRooms({bool forceRefresh = false}) async {
     final cachedRooms = _cacheService.getCachedRooms(key: cacheKey);
     
     if (cachedRooms != null) {
-      print('📦 Returning cached rooms due to error');
+      print('📦 Returning cached rooms due to error$e');
       return cachedRooms;
     }
     throw Exception('Error fetching rooms: $e');
