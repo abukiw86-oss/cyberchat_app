@@ -1,6 +1,6 @@
 
 import 'package:flutter/material.dart';
-import '../widgets/matrix.dart';
+import '../widgets/background_matrix.dart';
 import '../widgets/user_data_display.dart';
 import 'dart:async';
 import 'dart:math';
@@ -11,6 +11,9 @@ import '../screen/chat_screen.dart';
 import '../models/user_model.dart';
 import '../widgets/auth_widget.dart'; 
 import 'package:cyberchat/services/cookie_service.dart';
+import '../services/internet_cheker.dart';
+import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
+
 
 class CyberChatHomePage extends StatefulWidget {
   const CyberChatHomePage({super.key});
@@ -88,8 +91,6 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
       }
     });
   }
-
-
 
 Future<void> _loadSavedUser() async {
     final user = await _authService.getCurrentUser();
@@ -268,121 +269,93 @@ Widget _buildUserButton() {
 }
 
 Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
-          AnimatedBuilder(
-            animation: _glitchController,
-            builder: (context, child) {
-              return Transform.translate(
-                offset: Offset(
-                  _glitchController.value * 2 * sin(DateTime.now().millisecondsSinceEpoch / 100),
-                  0,
-                ),
-                child: Stack(
-                  children: [
-                    Text(
-                      'CYBERCHAT',
-                      style: TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 6,
-                        foreground: Paint()
-                          ..style = PaintingStyle.stroke
-                          ..strokeWidth = 2
-                          ..color = const Color(0xFF00ffff).withOpacity(0.5),
-                        shadows: [
-                          Shadow(
-                            color: const Color(0xFF00ff00).withOpacity(0.5),
-                            offset: Offset(-2 * _glitchController.value, 2 * _glitchController.value),
-                            blurRadius: 4,
-                          ),
-                          Shadow(
-                            color: const Color(0xFFFF00ff).withOpacity(0.5),
-                            offset: Offset(2 * _glitchController.value, -2 * _glitchController.value),
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Text(
-                      'CYBERCHAT',
-                      style: TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 6,
-                        color: const Color(0xFF00ff00),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+  return Container(
+    padding: const EdgeInsets.all(20),
+    child: Column(
+      children: [
+        const SizedBox(height: 20),
+        StreamBuilder<InternetStatus>(
+          stream: NetworkService().onStatusChange,
+          builder: (context, snapshot) {
+            final status = snapshot.data;
+            String headerText = 'CYBERCHAT';
+            Color neonColor = const Color(0xFF00ff00); 
+            double fontSize = 36;
 
-          const SizedBox(height: 8),
-          AnimatedBuilder(
-            animation: _pulseController,
-            builder: (context, child) {
-              return Text(
-                'ACTIVE ROOMS: ${_rooms.length}',
-                style: TextStyle(
-                  fontSize: 14,
-                  letterSpacing: 4,
-                  color: const Color(0xFF00ff00).withOpacity(0.5 + _pulseController.value * 0.3),
-                  fontWeight: FontWeight.w500,
-                ),
-              );
-            },
-          ),
+            if (status == InternetStatus.disconnected) {
+              headerText = 'WAITING FOR NETWORK...';
+              neonColor = Colors.redAccent; 
+              fontSize = 18; 
+            } else if (snapshot.connectionState == ConnectionState.waiting && _isLoading) {
+              headerText = 'UPDATING...';
+              neonColor = const Color(0xFF00ffff); 
+              fontSize = 28;
+            }
+            return AnimatedBuilder(
+              animation: _glitchController,
+              builder: (context, child) {
+                return Transform.translate(
+                  offset: Offset(
+                    _glitchController.value * 2 * sin(DateTime.now().millisecondsSinceEpoch / 100),
+                    0,
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Text(
+                        headerText,
+                        style: TextStyle(
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 6,
+                          foreground: Paint()
+                            ..style = PaintingStyle.stroke
+                            ..strokeWidth = 2
+                            ..color = neonColor.withOpacity(0.5),
+                          shadows: [
+                            Shadow(
+                              color: neonColor.withOpacity(0.5),
+                              offset: Offset(-2 * _glitchController.value, 2 * _glitchController.value),
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        headerText,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 6,
+                          color: neonColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        ),
 
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 30,
-                height: 2,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF00ff00), Color(0xFF00ffff)],
-                  ),
-                  borderRadius: BorderRadius.circular(2),
-                ),
+        const SizedBox(height: 8),
+        AnimatedBuilder(
+          animation: _pulseController,
+          builder: (context, child) {
+            return Text(
+              'ACTIVE ROOMS: ${_rooms.length}',
+              style: TextStyle(
+                fontSize: 14,
+                letterSpacing: 4,
+                color: const Color(0xFF00ff00).withOpacity(0.5 + _pulseController.value * 0.3),
+                fontWeight: FontWeight.w500,
               ),
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 12),
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: const Color(0xFF00ff00),
-                    width: 1,
-                  ),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text(
-                  'v2.0',
-                  style: TextStyle(
-                    color: Color(0xFF00ff00),
-                    fontSize: 10,
-                  ),
-                ),
-              ),
-              Container(
-                width: 30,
-                height: 2,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF00ffff), Color(0xFF00ff00)],
-                  ),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ],
-          ),
-        ],
+            );
+          },
+        ),
+        const SizedBox(height: 20),
+      ]
       ),
     );
   }
