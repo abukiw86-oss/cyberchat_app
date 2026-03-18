@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../models/rooms_model.dart';
 import '../services/get_rooms.dart'; 
-import 'input_room_password.dart'; 
+import 'input_room_password.dart';
+import 'handle_errors_in_scaffoldOfMessenger.dart'; 
 
 class CreateRoomDialog extends StatefulWidget {
   final UserModel user;
@@ -371,13 +372,7 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
         user: widget.user, 
         onSuccess: (result) {
           Navigator.pop(context); 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('✅ Successfully joined ${room.code}!'),
-              backgroundColor: const Color(0xFFFF00ff),
-              duration: const Duration(seconds: 2),
-            ),
-          );
+         CyberMessenger.show('✅ Successfully joined ${room.code}!');
           widget.onRoomCreated(result);
         },
       ),
