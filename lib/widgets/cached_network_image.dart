@@ -4,6 +4,7 @@ import '../services/rooms_cache_service.dart';
 
 class CachedNetworkImageWidget extends StatelessWidget {
   final String imageUrl;
+  final String roomname;
   final double width;
   final double height;
   final BoxFit fit;
@@ -13,6 +14,7 @@ class CachedNetworkImageWidget extends StatelessWidget {
   const CachedNetworkImageWidget({
     Key? key,
     required this.imageUrl,
+    required this.roomname,
     this.width = 50,
     this.height = 50,
     this.fit = BoxFit.cover,
@@ -39,11 +41,15 @@ class CachedNetworkImageWidget extends StatelessWidget {
           ),
       errorWidget: (context, url, error) => errorWidget ??
           Container(
-            color: Colors.grey.withOpacity(0.1),
-            child: const Icon(
-              Icons.broken_image,
-              color: Colors.grey,
-            ),
+            color:  Colors.grey.withOpacity(0.1), 
+            child:Center(
+              child:Text(roomname.substring(0,1) ,
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 23
+              ),
+            )
+            )
           ),
       cacheManager: RoomCacheService.imageCache,
     );
