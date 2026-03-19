@@ -8,8 +8,6 @@ class AuthService {
   static const String baseUrl = 'https://astufindit.x10.mx/cyberchat';
   final CookieService _cookieService = CookieService();
 
-
-
 Future<UserModel> authenticate({
     required String mode,
     required String recovery,
@@ -28,7 +26,6 @@ Future<UserModel> authenticate({
           'name': name,
         }),
       );
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = json.decode(response.body);
         

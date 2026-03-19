@@ -1,4 +1,3 @@
-// lib/widgets/create_room_dialog.dart
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../models/rooms_model.dart';

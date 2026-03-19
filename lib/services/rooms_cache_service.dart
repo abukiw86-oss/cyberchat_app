@@ -11,13 +11,12 @@ class RoomCacheService {
   final TimeStampService _timestampsBox =  TimeStampService();
 
   static const String roomsBoxName = 'roomsBox';
-  static const String imagesBoxName = 'imagesBox';
+
 
   // Cache durations
   static const Duration roomsCacheDuration = Duration(days: 30);
 
   Box<List> get _roomsBox => Hive.box<List>(roomsBoxName);
-  Box<String> get _imagesBox => Hive.box<String>(imagesBoxName);
 
 // room caching 
 Future<void> cacheRooms(List<RoomModel> rooms, {String key = 'all'}) async {
@@ -106,7 +105,6 @@ List<RoomModel>? getCachedRooms({String key = 'all'}) {
 
   Future<void> clearAllCache() async {
     await _roomsBox.clear();
-    await _imagesBox.clear();
     await _timestampsBox.clear();
     await imageCache.emptyCache();
   }

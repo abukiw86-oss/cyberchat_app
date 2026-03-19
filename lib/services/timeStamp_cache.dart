@@ -20,5 +20,5 @@ class TimeStampService {
     await _box.clear();
     print('timestamps cleared');
   }
-  List<dynamic> get allKeys => _box.keys.toList();
+List<dynamic> get allKeys => _box.keys.toList();
 }
