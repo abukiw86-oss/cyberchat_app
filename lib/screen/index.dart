@@ -1,4 +1,5 @@
 
+import 'package:cyberchat/widgets/appBar_widget.dart';
 import 'package:flutter/material.dart';
 import '../widgets/background_matrix.dart';
 import '../widgets/user_data_display.dart';
@@ -10,9 +11,8 @@ import '../services/auth.dart';
 import '../screen/chat_screen.dart';
 import '../models/user_model.dart';
 import '../widgets/auth_widget.dart'; 
-import '../services/internet_cheker.dart';
-import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import '../widgets/handle_errors_in_scaffoldOfMessenger.dart';
+import '../widgets/cached_network_image.dart';
 
 
 class CyberChatHomePage extends StatefulWidget {
@@ -23,7 +23,6 @@ class CyberChatHomePage extends StatefulWidget {
 }
 
 class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProviderStateMixin {
-  late AnimationController _glitchController;
   late AnimationController _pulseController;
   final Random _random = Random();
   late Timer _matrixTimer;
@@ -42,12 +41,6 @@ class _CyberChatHomePageState extends State<CyberChatHomePage> with TickerProvid
 void initState() {
     super.initState();
      _loadSavedUser();
-    
-    _glitchController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 150),
-    )..repeat(reverse: true);
-
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -183,7 +176,6 @@ String _getRandomMatrixSymbol() {
 
   @override
   void dispose() {
-    _glitchController.dispose();
     _pulseController.dispose();
     _matrixTimer.cancel();
     _refreshTimer?.cancel();
@@ -192,6 +184,7 @@ String _getRandomMatrixSymbol() {
   @override
 Widget build(BuildContext context) {
     return Scaffold(
+      appBar: CyberAppBar(),
       body: Stack(
         children: [
           CustomPaint(
@@ -215,6 +208,7 @@ Widget build(BuildContext context) {
           SafeArea(
             child: Column(
               children: [
+                const SizedBox(height: 30,),
                 _buildHeader(),
 
                 Expanded(
@@ -266,77 +260,7 @@ Widget _buildUserButton() {
 }
 
 Widget _buildHeader() {
-  return Container(
-    padding: const EdgeInsets.all(20),
-    child: Column(
-      children: [
-        const SizedBox(height: 20),
-        StreamBuilder<InternetStatus>(
-          stream: NetworkService().onStatusChange,
-          builder: (context, snapshot) {
-            final status = snapshot.data;
-            String headerText = 'CYBERCHAT';
-            Color neonColor = const Color(0xFF00ff00); 
-            double fontSize = 36;
-
-            if (status == InternetStatus.disconnected) {
-              headerText = 'WAITING FOR NETWORK...';
-              neonColor = Colors.redAccent; 
-              fontSize = 18; 
-            } else if (snapshot.connectionState == ConnectionState.waiting && _isLoading) {
-              headerText = 'UPDATING...';
-              neonColor = const Color(0xFF00ffff); 
-              fontSize = 28;
-            }
-            return AnimatedBuilder(
-              animation: _glitchController,
-              builder: (context, child) {
-                return Transform.translate(
-                  offset: Offset(
-                    _glitchController.value * 2 * sin(DateTime.now().millisecondsSinceEpoch / 100),
-                    0,
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Text(
-                        headerText,
-                        style: TextStyle(
-                          fontSize: fontSize,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 6,
-                          foreground: Paint()
-                            ..style = PaintingStyle.stroke
-                            ..strokeWidth = 2
-                            ..color = neonColor.withOpacity(0.5),
-                          shadows: [
-                            Shadow(
-                              color: neonColor.withOpacity(0.5),
-                              offset: Offset(-2 * _glitchController.value, 2 * _glitchController.value),
-                              blurRadius: 4,
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text(
-                        headerText,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: fontSize,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 6,
-                          color: neonColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
-        ),
-
-        const SizedBox(height: 8),
+  return 
         AnimatedBuilder(
           animation: _pulseController,
           builder: (context, child) {
@@ -350,11 +274,8 @@ Widget _buildHeader() {
               ),
             );
           },
-        ),
-        const SizedBox(height: 20),
-      ]
-      ),
-    );
+  );
+   
   }
 
 Widget _buildRoomsSection() {
@@ -479,6 +400,7 @@ Widget _buildRoomsSection() {
   }
 
 Widget _buildRoomCard(RoomModel room) {
+  final String imagepath = "${AuthService.baseUrl}/${room.logoPath}";
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -517,20 +439,12 @@ Widget _buildRoomCard(RoomModel room) {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(7),
                     child: Image.network(
-                      "https://astufindit.x10.mx/cyberchat/${room.logoPath}",
+                      imagepath,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
-                        return Center(
-                          child: Text(
-                            room.code.substring(0, 1).toUpperCase(),
-                            style: TextStyle(
-                              color: room.isPublic 
-                                  ? const Color(0xFF00ff00)
-                                  : const Color.fromARGB(255, 213, 3, 3),
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                        return CachedNetworkImageWidget(
+                          imageUrl: imagepath,
+                          roomname: room.code,
                         );
                       },
                     ),

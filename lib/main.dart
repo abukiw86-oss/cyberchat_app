@@ -13,7 +13,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
   await SharedPreferences.getInstance();
-
   final appDocumentDir = await getApplicationDocumentsDirectory();
   Hive.init(appDocumentDir.path);
   
@@ -23,7 +22,6 @@ void main() async{
   
   await Hive.openBox<UserModel>('userBox');
   await Hive.openBox<List>('roomsBox');
-  await Hive.openBox<Map>('messagesBox');
   await Hive.openBox<String>('imagesBox');
   await Hive.openBox<DateTime>('timestampsBox');
   
@@ -35,16 +33,18 @@ void main() async{
   await dotenv.load(fileName:'.env');
   
 
-  runApp(const CyberChatApp());
+  runApp(CyberChatApp());
 }
 
 class CyberChatApp extends StatelessWidget {
-  const CyberChatApp({super.key});
+   CyberChatApp({super.key});
+  final GlobalKey<ScaffoldMessengerState> messengerKey = GlobalKey<ScaffoldMessengerState>();
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'CyberChat',
+       scaffoldMessengerKey: messengerKey,
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: Colors.black,
         primaryColor: const Color(0xFF00ff00),

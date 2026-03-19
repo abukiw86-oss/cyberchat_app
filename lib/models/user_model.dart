@@ -63,21 +63,20 @@ class UserModel {
     };
   }
 
-  Future<void> saveToPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userJson = json.encode(toJson());
-    await prefs.setString('user_data', userJson);
-    await prefs.setBool('is_logged_in', true);
-    print('✅ User data saved to SharedPreferences');
-  }
-
-  
    factory UserModel.guest() {
     return UserModel(
       name: 'Guest',
       recoveryHash: '',
       isNew: false,
     );
+  }
+  
+  Future<void> saveToPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = json.encode(toJson());
+    await prefs.setString('user_data', userJson);
+    await prefs.setBool('is_logged_in', true);
+    print('✅ User data saved to SharedPreferences');
   }
 
   static Future<UserModel?> loadFromPrefs() async {
