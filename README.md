@@ -14,10 +14,16 @@
 ##  App Showcase
 
 <p align="center">
-  <img src="https://via.placeholder.com/200x400?text=Login+Screen" width="200" />
-  <img src="https://via.placeholder.com/200x400?text=Chat+Dashboard" width="200" />
-  <img src="https://via.placeholder.com/200x400?text=Message+View" width="200" />
-  <img src="https://via.placeholder.com/200x400?text=User+Profile" width="200" />
+ <img width="240" height="400" alt="image" src="https://github.com/user-attachments/assets/03b4502d-9d05-48b4-bdaa-324426c1a03d" />
+<img width="240" height="400" alt="image" src="https://github.com/user-attachments/assets/7b847044-917e-4d20-91c5-361d88efe6e0" />
+<img width="240" height="400" alt="image" src="https://github.com/user-attachments/assets/4fc7260e-3e43-4f68-97ea-b3bc3ac24248" />
+<img width="240" height="400" alt="image" src="https://github.com/user-attachments/assets/e2326483-9914-43c5-9295-4d51b7e0d793" />
+<img width="240" height="400" alt="image" src="https://github.com/user-attachments/assets/26f05cd1-c943-43df-9acc-07ec57912bcd" />
+<img width="240" height="400" alt="image" src="https://github.com/user-attachments/assets/a4268dee-b538-4862-adab-559b16bb8532" />
+<img width="240" height="400" alt="image" src="https://github.com/user-attachments/assets/58aca30e-f359-4c58-b9f2-d6b5a968a841" />
+<img width="240" height="400" alt="image" src="https://github.com/user-attachments/assets/b9bcb172-074a-42d2-a079-48d3620b9d9f" />
+<img width="240" height="400" alt="image" src="https://github.com/user-attachments/assets/cf64f9da-bc10-4464-be3e-7d118c223d0e" />
+
 </p>
 
 ---
