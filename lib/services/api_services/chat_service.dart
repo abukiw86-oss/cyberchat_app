@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
-import '../models/message_model.dart'; 
+import '../../models/message_model.dart'; 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'auth.dart';
+import 'auth_api.dart';
 
 
 class RoomApiService {
