@@ -1,34 +1,21 @@
 // lib/services/room_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../models/rooms_model.dart'; 
-import '../rooms_cache_service.dart'; 
+import '../../models/rooms_model.dart';  
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'auth_api.dart';
-import '../../utils/internet_cheker.dart';
-
+import 'auth_api.dart'; 
 
 class RoomService {
    static String get baseUrl => dotenv.env['BASE_URL'] ?? '';
    static String get imageurl  => dotenv.env['IMAGE_URL'] ?? '';
   
-   
-  final RoomCacheService _cacheService = RoomCacheService(); 
+    
   final AuthService _authService = AuthService();
 
 Future<List<RoomModel>> fetchRooms({bool forceRefresh = false}) async {
   try {
-    final visitorId = await _authService.getVisitorId(); 
-    final cacheKey = 'all_rooms_$visitorId';
-    final cachedRooms = _cacheService.getCachedRooms(key: cacheKey);
-    final bool isOnline = await NetworkService().isConnected;
-
-    if (!isOnline && !forceRefresh) {
-    if (cachedRooms != null) {
-      print('📦 Returning cached rooms due to error');
-      return cachedRooms;
-    }
-    } 
+    final visitorId = await _authService.getVisitorId();  
+  
     print('🌐 Fetching fresh rooms from API');
     var uri = Uri.parse('$baseUrl/fetch_rooms.php?action=get_user_rooms&visitor_id=$visitorId');
     print(uri);
@@ -51,14 +38,9 @@ Future<List<RoomModel>> fetchRooms({bool forceRefresh = false}) async {
         if (jsonResponse['success'] == true) {
           List<dynamic> roomsJson = jsonResponse['rooms'] ?? jsonResponse['user_rooms'] ?? [];
           final rooms = roomsJson.map((json) => RoomModel.fromJson(json)).toList();
+           
           
-          await _cacheService.cacheRooms(rooms, key: cacheKey);
-          
-          for (var room in rooms) {
-            if (room.haslogo) {
-              _cacheService.precacheImage('$imageurl/${room.logoPath}');
-            }
-          }
+           
           
           return rooms;
         } else {
@@ -72,16 +54,8 @@ Future<List<RoomModel>> fetchRooms({bool forceRefresh = false}) async {
       throw Exception('Failed to load rooms: ${response.statusCode}');
     }
   } catch (e) {
-    print('Error fetching rooms: $e');
-
-    final visitorId = await _authService.getVisitorId(); 
-    final cacheKey = 'all_rooms_$visitorId';
-    final cachedRooms = _cacheService.getCachedRooms(key: cacheKey);
-    
-    if (cachedRooms != null) {
-      print('📦 Returning cached rooms due to error$e');
-      return cachedRooms;
-    }
+    print('Error fetching rooms: $e'); 
+ 
     throw Exception('Error fetching rooms: $e');
   }
 }
@@ -113,10 +87,7 @@ Future<Map<String, dynamic>> joinRoom({
       
       if (response.statusCode == 200) {
         final result = json.decode(response.body);
-        
-        if (result['success'] == true) {
-          await _cacheService.clearRoomsCache();
-        }
+         
         
         return result;
       } else {
@@ -159,11 +130,7 @@ Future<Map<String, dynamic>> checkRoomPassword({
 
       if (response.statusCode == 200) {
         final result = json.decode(response.body);
-        
-        // If password correct, invalidate rooms cache
-        if (result['success'] == true) {
-          await _cacheService.clearRoomsCache();
-        }
+         
         
         return result;
       } else {
@@ -183,16 +150,7 @@ Future<Map<String, dynamic>> checkRoomPassword({
 
 Future<List<RoomModel>> fetchUsercreatedRooms({bool forceRefresh = false}) async {
     try { 
-      final visitorId = await _authService.getVisitorId();
-      final cacheKey = 'user_created_$visitorId';
-      
-      if (!forceRefresh) {
-        final cachedRooms = _cacheService.getCachedRooms(key: cacheKey);
-        if (cachedRooms != null) {
-          print('📦 Using cached user created rooms');
-          return cachedRooms;
-        }
-      }
+      final visitorId = await _authService.getVisitorId(); 
 
       print('🌐 Fetching fresh user created rooms from API');
       var uri = Uri.parse('$baseUrl/fetch_rooms.php?action=get_user_created_room&visitor_id=$visitorId');
@@ -213,8 +171,7 @@ Future<List<RoomModel>> fetchUsercreatedRooms({bool forceRefresh = false}) async
         if (jsonResponse['success'] == true) {
           List<dynamic> roomsJson = jsonResponse['user_rooms'] ?? jsonResponse['rooms'] ?? [];
           final rooms = roomsJson.map((json) => RoomModel.fromJson(json)).toList();
-          
-          await _cacheService.cacheRooms(rooms, key: cacheKey);
+           
           
           return rooms;
         } else {
@@ -224,29 +181,8 @@ Future<List<RoomModel>> fetchUsercreatedRooms({bool forceRefresh = false}) async
         throw Exception('Failed to load rooms: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error fetching user created rooms: $e');
-      
-     final visitorId = await _authService.getVisitorId(); 
-      final cacheKey = 'user_created_$visitorId';
-      final cachedRooms = _cacheService.getCachedRooms(key: cacheKey);
-      
-      if (cachedRooms != null) {
-        print('📦 Returning cached user created rooms due to error');
-        return cachedRooms;
-      }
-      
+      print('Error fetching user created rooms: $e'); 
       return []; 
-    }
-  }
-
-Future<void> refreshAllRoomData() async {
-    await _cacheService.clearRoomsCache();
-    await fetchRooms(forceRefresh: true);
-     
-    final visitorId = await _authService.getVisitorId();
-
-    if (visitorId.isNotEmpty) {
-      await fetchUsercreatedRooms(forceRefresh: true);
     }
   }
 }

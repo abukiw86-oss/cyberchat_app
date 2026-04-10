@@ -11,9 +11,8 @@ class UserService {
   static String get baseUrl => dotenv.env['BASE_URL'] ?? '';
   final AuthService _authService = AuthService();
 
-  Future<UserModel> getCurrentUser( {required String visitorid}) async {
-    try { 
-      
+Future<UserModel> getCurrentUserProfile( {required String visitorid}) async {
+    try {  
         Map<String, dynamic> visitorId = {
         'visitor_id': visitorid,
       };
@@ -39,18 +38,14 @@ class UserService {
     }
   }
 
-  Future<Map<String, dynamic>> uploadProfileImage(File imageFile) async {
+Future<Map<String, dynamic>> uploadProfileImage(File imageFile) async {
     try { 
      final visitorId = await _authService.getVisitorId(); 
       
       var request = http.MultipartRequest(
         'POST',
         Uri.parse('$baseUrl/api.php?action=upload_profile_image'),
-      );
-       
-      request.headers.addAll({ 
-
-      });
+      ); 
        
       request.fields['visitor_id'] = visitorId;
        
@@ -104,8 +99,7 @@ class UserService {
   }) async {
     try { 
       final visitorId = await _authService.getVisitorId(); 
-      
-      // Validate inputs
+       
       if (name.trim().isEmpty) {
         return {
           'success': false,
@@ -180,9 +174,7 @@ class UserService {
         } else {
           return uploadResult;  
         }
-      }
-      
-      // Then update profile
+      } 
       return await updateUserProfile(
         name: name,
         bio: bio,

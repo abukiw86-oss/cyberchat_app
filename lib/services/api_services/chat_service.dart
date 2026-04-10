@@ -28,8 +28,7 @@ class RoomApiService {
       );
 
       if (response.statusCode == 200) {
-        final jsonResponse = json.decode(response.body);
-        print(jsonResponse);
+        final jsonResponse = json.decode(response.body); 
         if (jsonResponse['success']) {
           List<dynamic> messagesJson = jsonResponse['messages'];
           return messagesJson.map((json) => MessageModel.fromJson(json)).toList();
@@ -64,15 +63,13 @@ class RoomApiService {
           'name': nickname,
           'visitor_id': visitorId,
         }),
-      );
-      print(response.body);
+      ); 
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(response.body);
         return jsonResponse['success'] ?? false;
       }
       return false;
-    } catch (e) {
-      print('Error sending message: $e');
+    } catch (e) { 
       return false;
     }
   }
@@ -99,11 +96,10 @@ class RoomApiService {
         } else {
           return [];
         }
-      }
-      print('not found ${response.statusCode}');
+      } 
       return [];
-    } catch (e) {
-      print('Error getting participants: $e');
+    } catch (e) { 
+
       return [];
     }
   }
@@ -132,8 +128,8 @@ class RoomApiService {
         }
       }
       return [];
-    } catch (e) {
-      print('Error getting banned users: $e');
+    } catch (e) { 
+      
       return [];
     }
   }
@@ -165,8 +161,7 @@ class RoomApiService {
         return jsonResponse['success'] ?? false;
       }
       return false;
-    } catch (e) {
-      print('Error removing user: $e');
+    } catch (e) { 
       return false;
     }
   }
@@ -196,8 +191,7 @@ class RoomApiService {
         return jsonResponse['success'] ?? false;
       }
       return false;
-    } catch (e) {
-      print('Error unbanning user: $e');
+    } catch (e) { 
       return false;
     }
   }
@@ -229,8 +223,7 @@ class RoomApiService {
         return jsonResponse['success'] ?? false;
       }
       return false;
-    } catch (e) {
-      print('Error making owner: $e');
+    } catch (e) { 
       return false;
     }
   }
@@ -256,8 +249,7 @@ class RoomApiService {
         return jsonResponse['success'] ?? false;
       }
       return false;
-    } catch (e) {
-      print('Error leaving room: $e');
+    } catch (e) { 
       return false;
     }
   }
@@ -287,8 +279,7 @@ class RoomApiService {
         return jsonResponse['success'] ?? false;
       }
       return false;
-    } catch (e) {
-      print('Error updating room limit: $e');
+    } catch (e) { 
       return false;
     }
   }
@@ -314,8 +305,7 @@ class RoomApiService {
         }
       }
       return null;
-    } catch (e) {
-      print('Error getting room info: $e');
+    } catch (e) { 
       return null;
     }
   }
