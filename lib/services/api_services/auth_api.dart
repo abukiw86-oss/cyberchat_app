@@ -34,7 +34,7 @@ class AuthService {
         if (jsonResponse['success'] == true) {
           final user = UserModel.fromJson(jsonResponse['user']);
            
-          await _saveToSecureStorage(user);
+          await saveToSecureStorage(user);
           
           return user;
         } else {
@@ -73,7 +73,7 @@ class AuthService {
     }
   }
  
-  Future<void> _saveToSecureStorage(UserModel user) async {
+  Future<void> saveToSecureStorage(UserModel user) async {
     final String userJson = json.encode(user.toJson());
     await _storage.write(key: _keyUserData, value: userJson);
     await _storage.write(key: _keyIsLoggedIn, value: 'true');

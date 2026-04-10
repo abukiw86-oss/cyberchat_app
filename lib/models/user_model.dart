@@ -1,7 +1,3 @@
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../services/rooms_cache_service.dart';
-
 class UserModel {
   
   final int? id;
@@ -22,8 +18,7 @@ class UserModel {
     this.bio,
     this.createdAt,
     this.isNew = false,
-  });
-  final RoomCacheService _imageCahce = RoomCacheService();
+  }); 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     DateTime? createdAt;
     try {
@@ -71,44 +66,6 @@ class UserModel {
       recoveryHash: '',
       isNew: false,
     );
-  }
-
-  Future<void> saveToPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userJson = json.encode(toJson());
-    await prefs.setString('user_data', userJson);
-    await prefs.setBool('is_logged_in', true); 
-    print('✅ User data saved to SharedPreferences');
-  }
-
-  static Future<UserModel?> loadFromPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
-    
-    if (!isLoggedIn) return null;
-    
-    final userJson = prefs.getString('user_data');
-    if (userJson == null) return null;
-    
-    try {
-      final Map<String, dynamic> jsonData = json.decode(userJson);
-      return UserModel.fromJson(jsonData);
-    } catch (e) {
-      print('Error loading user from prefs: $e');
-      return null;
-    }
-  }
- 
-  static Future<void> clearFromPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('user_data');
-    await prefs.setBool('is_logged_in', false);
-    print('✅ User data cleared from SharedPreferences');
-  }
- 
-   Future<bool> isLoggedIn() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('is_logged_in') ?? false;
   }
 
   bool get hasProfileImage => userLogo != null && userLogo!.isNotEmpty;

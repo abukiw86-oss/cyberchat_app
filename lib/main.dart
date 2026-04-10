@@ -1,34 +1,20 @@
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:provider/provider.dart'; // Don't forget this import!
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:path_provider/path_provider.dart'; 
+import 'package:cyberchat/providers/room_provider.dart';
+import 'package:flutter/material.dart'; 
+import 'package:provider/provider.dart';   
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-import 'screen/index.dart';
-import 'models/user_model.dart';
-import 'services/rooms_cache_service.dart';
+import 'screen/index.dart';  
 import 'providers/room_chat_provider.dart';  
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // 1. Setup Environment
-  await dotenv.load(fileName: '.env');
-  await SharedPreferences.getInstance();
-  
-  // 2. Setup Hive
-  final appDocumentDir = await getApplicationDocumentsDirectory();
-  await Hive.initFlutter(appDocumentDir.path); 
-  await Hive.openBox<UserModel>('userBox');
    
-  final cacheService = RoomCacheService();
-  await cacheService.ensureBoxesAreOpen();
-   
+  await dotenv.load(fileName: '.env'); 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(create: (_) => RoomProvider()),
       ],
       child: const CyberChatApp(),  
     ),
@@ -37,7 +23,7 @@ void main() async {
 
 class CyberChatApp extends StatelessWidget {
   const CyberChatApp({super.key}); 
-  
+
   static final GlobalKey<ScaffoldMessengerState> messengerKey = GlobalKey<ScaffoldMessengerState>();
 
   @override
