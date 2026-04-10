@@ -1,6 +1,6 @@
 // lib/widgets/recovery_auth_dialog.dart
 import 'package:flutter/material.dart';
-import '../services/auth.dart';
+import '../services/api_services/auth_api.dart';
 import '../models/user_model.dart';
 
 class RecoveryAuthDialog extends StatefulWidget {

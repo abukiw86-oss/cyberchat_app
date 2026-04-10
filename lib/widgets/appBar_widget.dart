@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'dart:math';
-import '../services/internet_cheker.dart';
+import '../utils/internet_cheker.dart';
 class CyberAppBar extends StatefulWidget implements PreferredSizeWidget {
   const CyberAppBar({super.key});
 

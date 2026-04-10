@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import '../models/rooms_model.dart';
 import '../models/user_model.dart';
-import '../services/get_rooms.dart';
+import '../services/api_services/room_service.dart';
 
 class RoomPasswordDialog extends StatefulWidget {
   final RoomModel room;

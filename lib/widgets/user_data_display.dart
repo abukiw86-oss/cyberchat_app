@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import '../models/user_model.dart';
 import '../models/rooms_model.dart';
-import '../services/get_rooms.dart';
-import '../services/auth.dart';
+import '../services/api_services/room_service.dart';
+import '../services/api_services/auth_api.dart';
 import '../screen/index.dart';
 import '../widgets/create_room.dart'; 
-import '../services/internet_cheker.dart';
+import '../utils/internet_cheker.dart';
 import 'cached_network_image.dart';
 
 class UserDataDisplay extends StatefulWidget {

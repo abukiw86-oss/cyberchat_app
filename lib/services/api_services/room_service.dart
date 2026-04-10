@@ -1,11 +1,11 @@
 // lib/services/room_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/rooms_model.dart'; 
-import 'rooms_cache_service.dart'; 
+import '../../models/rooms_model.dart'; 
+import '../rooms_cache_service.dart'; 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'auth.dart';
-import 'internet_cheker.dart';
+import 'auth_api.dart';
+import '../../utils/internet_cheker.dart';
 
 
 class RoomService {

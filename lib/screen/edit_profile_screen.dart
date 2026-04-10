@@ -1,10 +1,10 @@
 // lib/screens/editprofile.dart
-import 'package:cyberchat/services/chat_service.dart';
+import 'package:cyberchat/services/api_services/chat_service.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:cyberchat/models/user_model.dart';
-import 'package:cyberchat/services/profile_edit_service.dart'; 
+import 'package:cyberchat/services/api_services/profile_edit_service.dart'; 
 
 class EditProfile extends StatefulWidget {
   final UserModel user;

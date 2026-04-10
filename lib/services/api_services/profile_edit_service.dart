@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:cyberchat/models/user_model.dart'; 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'auth.dart';
+import 'auth_api.dart';
 
 class UserService {
   static String get baseUrl => dotenv.env['BASE_URL'] ?? '';
@@ -220,8 +220,7 @@ class UserService {
       return null;
     }
   }
-
-  // Delete profile image
+ 
   Future<bool> deleteProfileImage() async {
     try { 
      final visitorId = await _authService.getVisitorId(); 
@@ -246,21 +245,16 @@ class UserService {
       return false;
     }
   }
-
-  // Helper method to update local user data
+ 
   Future<void> _updateLocalUserData(Map<String, dynamic> userData) async {
-    try {
-      // Update cookies if needed
-      if (userData['recovery_hash'] != null) {
-        // You might want to update stored cookies here
-        // This depends on your cookie service implementation
+    try { 
+      if (userData['recovery_hash'] != null) { 
       }
     } catch (e) {
       print('Error updating local user data: $e');
     }
   }
-
-  // Get user statistics
+ 
   Future<Map<String, dynamic>> getUserStats() async {
     try { 
       final response = await http.get(

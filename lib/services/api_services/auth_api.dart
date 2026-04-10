@@ -1,7 +1,7 @@
 import 'dart:convert'; 
 import 'package:http/http.dart' as http;
-import '../models/user_model.dart'; 
-import 'rooms_cache_service.dart'; 
+import '../../models/user_model.dart'; 
+import '../rooms_cache_service.dart'; 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AuthService {
@@ -52,51 +52,7 @@ class AuthService {
     }
   }
 
-  Future<UserModel?> _checkSession({bool forceApiCheck = false}) async {
-    try {
-      if (!forceApiCheck) {
-        final cachedUser = await UserModel.loadFromPrefs();
-        if (cachedUser != null) {
-          print(' Using cached user from SharedPreferences');
-          return cachedUser;
-        }
-      }
-
-      print('Checking session with API');
-      final visitorId = getVisitorId();
-
-      final response = await http.get(
-        Uri.parse('$baseUrl/api.php?action=check_session&id=$visitorId'),
-        headers: {
-          'Content-Type': 'application/json', 
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonResponse = json.decode(response.body);
-        
-        if (jsonResponse['success'] == true) {
-          final user = UserModel.fromJson(jsonResponse['user']);
-          await user.saveToPrefs();
-          print(jsonResponse['user']['user_logo']);
-          print(user.userLogo); 
-          return user;
-        }
-      }
-
-      await UserModel.clearFromPrefs();
-      bool isLoggedIn = await isUserLoggedIn();
-      if(isLoggedIn){
-      logout();
-      }
-      return null;
-      
-    } catch (e) {
-      print('Session check error: $e');
-      return await UserModel.loadFromPrefs();
-    }
-  }
-
+ 
   Future<UserModel?> getCurrentUser() async {
     return await UserModel.loadFromPrefs();
   }
