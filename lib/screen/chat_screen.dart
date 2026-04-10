@@ -1,4 +1,5 @@
 // lib/screen/chat_room_page.dart
+import 'package:cyberchat/services/api_services/auth_api.dart';
 import 'package:flutter/material.dart';
 import 'dart:async'; 
 import 'package:provider/provider.dart';
@@ -36,7 +37,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       widget.room.code, 
       widget.user.displayName, 
       widget.room.status
-    ).catchError((e) => _showMessage(e.toString(),true ));
+    ).catchError((e) => _showMessage(e.toString(), true ));
   });
 }
 
@@ -122,22 +123,25 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: _buildAppBar(),
-      body: chatPrivider.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Expanded(
-                  child: _buildMessagesList(),
-                ),
-                _buildInputArea(),
-              ],
+@override
+Widget build(BuildContext context) { 
+  return Consumer<ChatProvider>(
+    builder: (context, chatProvider, child) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: _buildAppBar(chatProvider),  
+        body: Column(
+          children: [
+            Expanded(
+              child: _buildMessagesList(chatProvider), 
             ),
-    );
-  }
+            _buildInputArea(chatProvider), 
+          ],
+        ),
+      );
+    },
+  );
+}
   
   String _formatTime(String timestamp) {
     try {
@@ -152,7 +156,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     return widget.user.recoveryHash.toString();
   }
 
-  PreferredSizeWidget _buildAppBar() {
+  PreferredSizeWidget _buildAppBar(ChatProvider chatPrivider) {
     return AppBar(
       backgroundColor: Colors.black,
       leading: IconButton(
@@ -214,46 +218,22 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     );
   }
 
-  Widget _buildMessagesList() {
-    if (chatPrivider.messages.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.chat_bubble_outline,
-              size: 64,
-              color: const Color(0xFF00ff00).withOpacity(0.3),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No messages yet',
-              style: TextStyle(
-                color: const Color(0xFF00ff00).withOpacity(0.5),
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Start the conversation!',
-              style: TextStyle(color: Colors.grey),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.all(16),
-      itemCount: chatPrivider.messages.length,
-      itemBuilder: (context, index) {
-        final message = chatPrivider.messages[index];
-        return _buildMessageBubble(message);
-      },
-    );
+  Widget _buildMessagesList(ChatProvider provider) {  
+  if (provider.messages.isEmpty) {
+    return Center(child: Text("No messages yet", style: TextStyle(color: Colors.white)));
   }
 
+  return ListView.builder(
+    controller: _scrollController, 
+    padding: const EdgeInsets.all(16),
+    itemCount: provider.messages.length,
+    itemBuilder: (context, index) {
+      final message = provider.messages[index];
+      return _buildMessageBubble(message);
+    },
+  );
+}
+  
   Widget _buildMessageBubble(MessageModel message) {
     final isSelf = message.visitorHash == _getVisitorId();
     
@@ -371,7 +351,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
   Widget _buildFileWidget(String url, bool isSelf) {
     final isImage = url.toLowerCase().isNotEmpty;
-    
+    print(url);
     if (isImage) {
       return GestureDetector(
         onTap: () => _showImageDialog(url),
@@ -380,7 +360,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Image.network(
-              url,
+              '${AuthService.baseUrl}/$url',
               height: 150,
               width: double.infinity,
               fit: BoxFit.cover,
@@ -435,7 +415,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     );
   }
 
-  Widget _buildInputArea() { 
+  Widget _buildInputArea(ChatProvider chatPrivider) { 
   return Container(
     padding: const EdgeInsets.all(8),
     decoration: BoxDecoration(
@@ -456,7 +436,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           child: TextField(
             controller: _messageController,
             style: const TextStyle(color: Colors.white),
-            enabled: !chatPrivider.isSending, // Disable input while sending
+            enabled: !chatPrivider.isSending,  
             decoration: InputDecoration(
               hintText: 'Type a message...',
               hintStyle: const TextStyle(color: Colors.grey),

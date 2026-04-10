@@ -23,7 +23,7 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
  
-  Future<void> login(String mode, String recovery, String name) async {
+  Future<void> authenticate(String mode, String recovery, String name) async {
     _isLoading = true;
     notifyListeners();
     try {

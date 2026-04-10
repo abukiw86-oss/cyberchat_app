@@ -1,6 +1,7 @@
 // lib/widgets/recovery_auth_dialog.dart
+import 'package:cyberchat/providers/userProvider.dart';
 import 'package:flutter/material.dart';
-import '../services/api_services/auth_api.dart';
+import 'package:provider/provider.dart'; 
 import '../models/user_model.dart';
 
 class RecoveryAuthDialog extends StatefulWidget {
@@ -15,12 +16,13 @@ class RecoveryAuthDialog extends StatefulWidget {
 class _RecoveryAuthDialogState extends State<RecoveryAuthDialog> {
   final _formKey = GlobalKey<FormState>();
   final _recoveryController = TextEditingController();
-  final _nameController = TextEditingController();
-  final _authService = AuthService();
+  final _nameController = TextEditingController(); 
+  late UserProvider userProvider;
   
   bool _isLoading = false;
   bool _isCreateMode = true;
   String? _errorMessage;
+  @override
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -31,15 +33,14 @@ class _RecoveryAuthDialogState extends State<RecoveryAuthDialog> {
     });
 
     try {
-      final user = await _authService.authenticate(
-        mode: _isCreateMode ? 'create' : 'login',
-        recovery: _recoveryController.text.trim(),
-        name: _nameController.text.trim(),
+        await userProvider.authenticate(
+        _isCreateMode ? 'create' : 'login',
+         _recoveryController.text.trim(),
+        _nameController.text.trim(),
       );
       
       if (mounted) {
-        Navigator.pop(context);
-        widget.onSuccess(user);
+        Navigator.pop(context); 
       }
       
     } catch (e) {
@@ -59,6 +60,7 @@ class _RecoveryAuthDialogState extends State<RecoveryAuthDialog> {
 
   @override
   Widget build(BuildContext context) {
+    userProvider = context.watch<UserProvider>();
     return Dialog(
       backgroundColor: Colors.black,
       shape: RoundedRectangleBorder(

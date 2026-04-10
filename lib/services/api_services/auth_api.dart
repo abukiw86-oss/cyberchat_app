@@ -57,8 +57,7 @@ class AuthService {
 
     try { 
       return UserModel.fromJson(json.decode(userJson));
-    } catch (e) {
-      print('Error decoding secure user: $e');
+    } catch (e) { 
       return null;
     }
   }
@@ -66,8 +65,8 @@ class AuthService {
   Future<void> logout() async {
     try {
       await http.post(Uri.parse('$baseUrl/api.php?action=logout'));
-    } catch (e) {
-      print('Logout API error: $e');
+    } catch (e) { 
+      // 
     } finally {
       await clearSecureStorage();
     }
@@ -76,14 +75,12 @@ class AuthService {
   Future<void> saveToSecureStorage(UserModel user) async {
     final String userJson = json.encode(user.toJson());
     await _storage.write(key: _keyUserData, value: userJson);
-    await _storage.write(key: _keyIsLoggedIn, value: 'true');
-    print('✅ Entire user object saved as JSON');
+    await _storage.write(key: _keyIsLoggedIn, value: 'true'); 
   }
  
   Future<void> clearSecureStorage() async {
     await _storage.delete(key: _keyUserData);
-    await _storage.delete(key: _keyIsLoggedIn);
-    print('✅ Secure storage cleared');
+    await _storage.delete(key: _keyIsLoggedIn); 
   }
  
   Future<bool> isUserLoggedIn() async {

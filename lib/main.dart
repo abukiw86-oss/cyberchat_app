@@ -1,4 +1,6 @@
+import 'package:cyberchat/providers/profile_editing_provider.dart';
 import 'package:cyberchat/providers/room_provider.dart';
+import 'package:cyberchat/providers/userProvider.dart';
 import 'package:flutter/material.dart'; 
 import 'package:provider/provider.dart';   
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -13,8 +15,10 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => RoomProvider()),
+        ChangeNotifierProvider(create: (_) => ProfileProvider()),
       ],
       child: const CyberChatApp(),  
     ),
