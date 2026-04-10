@@ -12,7 +12,7 @@ class ChatProvider extends ChangeNotifier {
    
   final List<MessageModel> _messages = [];
   List<Map<String, dynamic>> _participants = [];
-  List<Map<String, dynamic>> _bannedUsers = [];
+  final List<Map<String, dynamic>> _bannedUsers = [];
    
   final ScrollController _scrollController = ScrollController();
 

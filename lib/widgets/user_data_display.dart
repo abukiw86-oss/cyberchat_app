@@ -1,6 +1,5 @@
 
-import 'package:cyberchat/screen/edit_profile_screen.dart';
-import 'package:cyberchat/services/rooms_cache_service.dart';
+import 'package:cyberchat/screen/edit_profile_screen.dart'; 
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../models/user_model.dart';
@@ -8,9 +7,7 @@ import '../models/rooms_model.dart';
 import '../services/api_services/room_service.dart';
 import '../services/api_services/auth_api.dart';
 import '../screen/index.dart';
-import '../widgets/create_room.dart'; 
-import '../utils/internet_cheker.dart';
-import 'cached_network_image.dart';
+import '../widgets/create_room.dart';  
 
 class UserDataDisplay extends StatefulWidget {
   final UserModel user;
@@ -31,10 +28,8 @@ class UserDataDisplay extends StatefulWidget {
 class _UserDataDisplayState extends State<UserDataDisplay> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   final RoomService _roomService = RoomService(); 
-  final AuthService _authService = AuthService();
-  final NetworkService _internetCheck = NetworkService();
-  final String baseurl = RoomService.imageurl;
-  final RoomCacheService _imagecache = RoomCacheService();
+  final AuthService _authService = AuthService(); 
+  final String baseurl = RoomService.imageurl; 
   
   List<RoomModel> _userRooms = [];
   bool _isLoadingRooms = true;
@@ -112,7 +107,7 @@ class _UserDataDisplayState extends State<UserDataDisplay> with SingleTickerProv
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => EditProfile(
+        builder: (_) => EditProfileScreen(
           user: widget.user,
           onProfileUpdated: (updatedUser) {
             // Update local state
@@ -195,10 +190,7 @@ class _UserDataDisplayState extends State<UserDataDisplay> with SingleTickerProv
     if (widget.user.userLogo != null && widget.user.userLogo!.isNotEmpty) {
       return Image.network(
         imageUrl,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return CachedNetworkImageWidget(isprofile: true, imageUrl: imageUrl, placeholder: _buildInitialsAvatar(), username: widget.user.initials,);
-        }, 
+        fit: BoxFit.cover, 
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;
           return Center(

@@ -371,7 +371,7 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
         user: widget.user, 
         onSuccess: (result) {
           Navigator.pop(context); 
-         CyberMessenger.show('✅ Successfully joined ${room.code}!');
+         CyberMessenger.show('Successfully joined ${room.code}!');
           widget.onRoomCreated(result);
         },
       ),
