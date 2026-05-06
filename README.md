@@ -49,7 +49,7 @@ graph TD
 | **Frontend** | Flutter Framework (Dart) |
 | **State Management** | Provider / BLoC |
 | **Backend API** | PHP  |
-| **Database** | MySQL (Remote) & Hive(local) |
+| **Database** | MySQL (Remote) & Hive and Secure Storage(local) |
 | **Image Loading** | Cached Network Image |
 
 
@@ -171,6 +171,6 @@ COMMIT;
   - [ ] **Individual Chats:** adding   1-on-1 messaging to room dynamics.
 
 -----
- 
+ ```
 **Abubeker** 
 ```
